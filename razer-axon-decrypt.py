@@ -162,10 +162,10 @@ def main():
             print()
             continue
 
-        if extract_wallpaper(wp["archive"], wp["password"], args.output):
-            # Определяем имя извлечённого файла
+        out_dir = args.output / wp["name"]
+        if extract_wallpaper(wp["archive"], wp["password"], out_dir):
             source = wp["config"]["Source"].replace("\\", os.sep)
-            extracted = args.output / Path(source).name
+            extracted = out_dir / Path(source).name
             print(f"  Готово: {extracted}\n")
         else:
             print(f"  ОШИБКА\n")
