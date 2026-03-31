@@ -22,9 +22,8 @@ DEFAULT_WALLPAPERS_DIR = Path.home() / "RazerAxonWallpapers"
 DEFAULT_OUTPUT_DIR = Path.home() / "RazerAxonWallpapers" / "Extracted"
 
 
-def derive_password(resource_config_path: Path) -> str:
-    content = resource_config_path.read_text(encoding="utf-8")
-    return hmac.new(HMAC_KEY, content.encode("utf-8"), hashlib.sha256).hexdigest()
+def derive_password(config_content: str) -> str:
+    return hmac.new(HMAC_KEY, config_content.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def find_wallpapers(wallpapers_dir: Path) -> list[dict]:
@@ -32,7 +31,8 @@ def find_wallpapers(wallpapers_dir: Path) -> list[dict]:
     results = []
     for config_path in wallpapers_dir.rglob("ResourceConfig.txt"):
         try:
-            config = json.loads(config_path.read_text(encoding="utf-8"))
+            content = config_path.read_text(encoding="utf-8")
+            config = json.loads(content)
         except (json.JSONDecodeError, OSError) as e:
             print(f"  [!] Ошибка чтения {config_path}: {e}", file=sys.stderr)
             continue
@@ -42,7 +42,6 @@ def find_wallpapers(wallpapers_dir: Path) -> list[dict]:
         if not source or encrypted.upper() != "ZIP":
             continue
 
-        # Source использует Windows-пути
         source_rel = source.replace("\\", os.sep)
         source_path = config_path.parent / source_rel
 
@@ -50,12 +49,10 @@ def find_wallpapers(wallpapers_dir: Path) -> list[dict]:
             print(f"  [!] Файл не найден: {source_path}", file=sys.stderr)
             continue
 
-        password = derive_password(config_path)
-        wallpaper_name = config_path.parent.name
         results.append({
-            "name": wallpaper_name,
+            "name": config_path.parent.name,
             "archive": source_path,
-            "password": password,
+            "password": derive_password(content),
             "config": config,
         })
 
@@ -132,7 +129,7 @@ def main():
         if not args.config.exists():
             sys.exit(f"Конфиг не найден: {args.config}")
 
-        password = derive_password(args.config)
+        password = derive_password(args.config.read_text(encoding="utf-8"))
         print(f"Пароль: {password}")
         if not args.print_passwords:
             if extract_wallpaper(args.file, password, args.output):
