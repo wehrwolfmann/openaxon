@@ -7,8 +7,7 @@ Run [Razer Axon](https://www.razer.com/software/axon) wallpaper engine on Linux 
 | File | Description |
 |------|-------------|
 | `razer-login.py` | Login to Razer ID without Razer Central |
-| `razer-axon.sh` | Launch script with Wine/WebView2 fixes |
-| `razer-axon-taskbar-fix.sh` | Daemon that keeps the window visible in taskbar |
+| `razer-axon.sh` | Launch script with Wine/WebView2 and taskbar fixes |
 | `razer-axon-decrypt.py` | Extract encrypted wallpaper videos |
 | `patch/RazerAxon.UserManager.dll` | Patched DLL — replaces Razer Central auth with standalone login |
 
@@ -69,10 +68,8 @@ cp patch/RazerAxon.UserManager.dll "$AXON_DIR/"
 ### 3. Install scripts
 
 ```bash
-# Copy scripts
-cp razer-axon.sh razer-axon-taskbar-fix.sh razer-login.py razer-axon-decrypt.py ~/.local/bin/
-chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-axon-taskbar-fix.sh
-chmod +x ~/.local/bin/razer-login.py ~/.local/bin/razer-axon-decrypt.py
+cp razer-axon.sh razer-login.py razer-axon-decrypt.py ~/.local/bin/
+chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-axon-decrypt.py
 ```
 
 ### 4. Login to Razer ID
@@ -113,26 +110,7 @@ razer-axon.sh             # Start Razer Axon
 The launch script:
 - Sets Wine environment variables for WebView2 compatibility
 - If Axon is already running, activates the existing window
-- Fixes the taskbar visibility issue after launch
-
-### Taskbar fix (autostart)
-
-Razer Axon sets `WM_TRANSIENT_FOR` on its window, which hides it from the taskbar on some window managers. The fix daemon watches for this and removes the property.
-
-```bash
-# Run manually
-razer-axon-taskbar-fix.sh &
-
-# Or add to autostart (KDE example)
-cat > ~/.config/autostart/razer-axon-taskbar-fix.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Razer Axon Taskbar Fix
-Exec=$HOME/.local/bin/razer-axon-taskbar-fix.sh
-Hidden=false
-X-KDE-autostart-phase=2
-EOF
-```
+- Reactively fixes taskbar visibility (Wine sets `WM_TRANSIENT_FOR` which hides the window from the taskbar — the script watches for this and removes it)
 
 ### Decrypt wallpapers
 
@@ -188,8 +166,7 @@ The HMAC key is hardcoded in Razer Axon's .NET assemblies.
 │ Linux                                               │
 │                                                     │
 │  razer-login.py ──► id.razer.com ──► JWT token      │
-│  razer-axon.sh ──► Wine + env fixes                 │
-│  razer-axon-taskbar-fix.sh ──► xprop WM fix         │
+│  razer-axon.sh ──► Wine + env/taskbar fixes          │
 │  razer-axon-decrypt.py ──► HMAC-SHA256 → unzip      │
 │                                                     │
 └─────────────────────────────────────────────────────┘
@@ -247,9 +224,7 @@ razer-login.py            # Refresh
 ```
 
 ### Window not visible in taskbar
-```bash
-razer-axon-taskbar-fix.sh &
-```
+The launch script handles this automatically. If it still happens, check that `xdotool` and `xprop` are installed.
 
 ### Wallpaper decryption fails
 Ensure `7z` or `unzip` is installed and supports ZipCrypto.

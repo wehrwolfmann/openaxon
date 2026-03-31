@@ -16,7 +16,7 @@ fi
 cd "$AXON_DIR"
 wine RazerAxon.exe -showui "$@" &>/dev/null &
 
-# Wait for window and fix taskbar
+# Wait for window to appear
 while true; do
     WID=$(xdotool search --name "Razer Axon" 2>/dev/null | head -1)
     if [ -n "$WID" ]; then
@@ -27,3 +27,11 @@ while true; do
     fi
     sleep 1
 done
+
+# Wine fix: reactively remove WM_TRANSIENT_FOR whenever Wine re-sets it,
+# so the window stays visible in the taskbar.
+while xprop -id "$WID" -spy WM_TRANSIENT_FOR 2>/dev/null | read line; do
+    if echo "$line" | grep -q "window id"; then
+        xprop -id "$WID" -remove WM_TRANSIENT_FOR 2>/dev/null
+    fi
+done &
