@@ -81,6 +81,13 @@ def extract(archive: Path, password: str, output_dir: Path) -> bool:
     if not zipfile.is_zipfile(archive):
         return False
 
+    # Get expected filenames from the archive
+    try:
+        with zipfile.ZipFile(archive) as zf:
+            expected_files = [zi.filename for zi in zf.infolist() if not zi.is_dir()]
+    except zipfile.BadZipFile:
+        return False
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Try external tools first (faster)
@@ -90,7 +97,7 @@ def extract(archive: Path, password: str, output_dir: Path) -> bool:
     ]:
         try:
             result = subprocess.run(cmd, capture_output=True, text=True)
-            if result.returncode == 0:
+            if result.returncode == 0 and _verify_extracted(output_dir, expected_files):
                 return True
         except FileNotFoundError:
             continue
@@ -99,6 +106,14 @@ def extract(archive: Path, password: str, output_dir: Path) -> bool:
     try:
         with zipfile.ZipFile(archive) as zf:
             zf.extractall(output_dir, pwd=password.encode())
-        return True
+        return _verify_extracted(output_dir, expected_files)
     except (RuntimeError, zipfile.BadZipFile):
         return False
+
+
+def _verify_extracted(output_dir: Path, expected_files: list[str]) -> bool:
+    """Check that expected files exist and are non-empty."""
+    return all(
+        (f := output_dir / name).exists() and f.stat().st_size > 0
+        for name in expected_files
+    )
