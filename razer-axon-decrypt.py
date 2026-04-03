@@ -2,7 +2,6 @@
 """CLI for decrypting Razer Axon wallpapers."""
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
@@ -85,8 +84,7 @@ def main():
 
         out_dir = args.output / wp.name
         if extract(wp.archive, wp.password, out_dir):
-            extracted = out_dir / Path(wp.source.replace("\\", os.sep)).name
-            print(f"  Done: {extracted}\n")
+            print(f"  Done: {out_dir / wp.source_filename}\n")
         else:
             print(f"  FAILED\n")
 

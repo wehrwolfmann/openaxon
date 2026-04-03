@@ -9,10 +9,10 @@ Password = HMAC-SHA256(HMAC_KEY, ResourceConfig.txt contents).hexdigest()
 import hashlib
 import hmac
 import json
-import os
 import subprocess
+import zipfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 HMAC_KEY = b"j6l-aUmhCc@tN%T_"
 
@@ -22,8 +22,12 @@ class Wallpaper:
     name: str
     archive: Path
     password: str
-    source: str  # original relative path from config (Windows-style)
+    source: PureWindowsPath
     config: dict
+
+    @property
+    def source_filename(self) -> str:
+        return self.source.name
 
 
 def derive_password(config_content: str) -> str:
@@ -49,12 +53,16 @@ def find_wallpapers(wallpapers_dir: Path) -> list[Wallpaper]:
             continue
         content, config = parsed
 
-        source = config.get("Source", "")
-        if not source or config.get("SourceEncryptedTypes", "").upper() != "ZIP":
+        source_str = config.get("Source", "")
+        if not source_str or config.get("SourceEncryptedTypes", "").upper() != "ZIP":
             continue
 
-        archive = config_path.parent / source.replace("\\", os.sep)
+        source = PureWindowsPath(source_str)
+        archive = config_path.parent / Path(*source.parts)
         if not archive.exists():
+            continue
+
+        if not zipfile.is_zipfile(archive):
             continue
 
         results.append(Wallpaper(
@@ -69,9 +77,13 @@ def find_wallpapers(wallpapers_dir: Path) -> list[Wallpaper]:
 
 
 def extract(archive: Path, password: str, output_dir: Path) -> bool:
-    """Extract a ZipCrypto-encrypted archive using 7z or unzip."""
+    """Extract a ZipCrypto-encrypted archive using 7z, unzip, or stdlib zipfile."""
+    if not zipfile.is_zipfile(archive):
+        return False
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Try external tools first (faster)
     for cmd in [
         ["7z", "x", f"-p{password}", f"-o{output_dir}", str(archive), "-aoa"],
         ["unzip", "-o", "-P", password, str(archive), "-d", str(output_dir)],
@@ -83,4 +95,10 @@ def extract(archive: Path, password: str, output_dir: Path) -> bool:
         except FileNotFoundError:
             continue
 
-    return False
+    # Fallback: stdlib zipfile (slow for large files, but no external deps)
+    try:
+        with zipfile.ZipFile(archive) as zf:
+            zf.extractall(output_dir, pwd=password.encode())
+        return True
+    except (RuntimeError, zipfile.BadZipFile):
+        return False
