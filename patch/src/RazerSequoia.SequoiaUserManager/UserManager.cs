@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -22,6 +23,10 @@ public class UserManager : IUserManager, IDisposable
 	private static readonly string PrefsFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Razer", "RazerAxon", "wine_prefs.json");
 
 	private readonly SequoiaFeedbackConfig _feedbackCfg;
+
+	private NotifyIcon? _trayIcon;
+	private Thread? _trayThread;
+	private readonly List<SystrayWallpaper> _systrayWallpapers = new();
 
 	public SequoiaUser? User { get; private set; }
 
@@ -199,7 +204,132 @@ public class UserManager : IUserManager, IDisposable
 
 	public Task EnsureSystrayAsync()
 	{
+		if (_trayIcon != null || _trayThread != null)
+			return Task.CompletedTask;
+
+		_trayThread = new Thread(() =>
+		{
+			Application.EnableVisualStyles();
+
+			var icon = LoadTrayIcon();
+			_trayIcon = new NotifyIcon
+			{
+				Icon = icon,
+				Text = "Razer Axon",
+				Visible = true,
+				ContextMenuStrip = BuildTrayMenu(),
+			};
+
+			_trayIcon.MouseClick += (s, e) =>
+			{
+				if (e.Button == MouseButtons.Left)
+					this.OnSystrayOpenWallpaper?.Invoke(this, "");
+			};
+
+			Application.Run();
+		});
+		_trayThread.SetApartmentState(ApartmentState.STA);
+		_trayThread.IsBackground = true;
+		_trayThread.Start();
+
 		return Task.CompletedTask;
+	}
+
+	private Icon LoadTrayIcon()
+	{
+		try
+		{
+			string iconPath = Path.Combine(
+				Path.GetDirectoryName(typeof(UserManager).Assembly.Location) ?? "",
+				"Axon.ico");
+			if (File.Exists(iconPath))
+				return new Icon(iconPath);
+		}
+		catch { }
+		return SystemIcons.Application;
+	}
+
+	private ContextMenuStrip BuildTrayMenu()
+	{
+		var menu = new ContextMenuStrip();
+		menu.BackColor = Color.FromArgb(30, 30, 30);
+		menu.ForeColor = Color.FromArgb(68, 215, 88);
+
+		var openItem = new ToolStripMenuItem("Razer Axon");
+		openItem.Font = new Font(openItem.Font, FontStyle.Bold);
+		openItem.Click += (s, e) => this.OnSystrayOpenWallpaper?.Invoke(this, "");
+		menu.Items.Add(openItem);
+
+		menu.Items.Add(new ToolStripSeparator());
+
+		// Wallpaper items will be added by SetSystrayGamesAsync
+		var wallpaperPlaceholder = new ToolStripMenuItem("No wallpapers") { Enabled = false };
+		wallpaperPlaceholder.Name = "wallpapers_placeholder";
+		menu.Items.Add(wallpaperPlaceholder);
+
+		menu.Items.Add(new ToolStripSeparator());
+
+		var profileItem = new ToolStripMenuItem("Profile");
+		profileItem.Click += (s, e) => OpenProfileWindowAsync();
+		menu.Items.Add(profileItem);
+
+		var exitItem = new ToolStripMenuItem("Exit");
+		exitItem.Click += (s, e) =>
+		{
+			this.SystrayExitApp?.Invoke(this, EventArgs.Empty);
+			this.OnUserExitAppTriggered?.Invoke(this, EventArgs.Empty);
+		};
+		menu.Items.Add(exitItem);
+
+		return menu;
+	}
+
+	private void UpdateTrayWallpapers()
+	{
+		if (_trayIcon?.ContextMenuStrip == null) return;
+
+		var menu = _trayIcon.ContextMenuStrip;
+		// Invoke on the menu's thread
+		if (menu.InvokeRequired)
+		{
+			menu.Invoke(new Action(UpdateTrayWallpapers));
+			return;
+		}
+
+		// Remove old wallpaper items (between first separator and second separator)
+		int firstSep = -1;
+		int secondSep = -1;
+		for (int i = 0; i < menu.Items.Count; i++)
+		{
+			if (menu.Items[i] is ToolStripSeparator)
+			{
+				if (firstSep == -1) firstSep = i;
+				else { secondSep = i; break; }
+			}
+		}
+
+		if (firstSep >= 0 && secondSep > firstSep)
+		{
+			for (int i = secondSep - 1; i > firstSep; i--)
+				menu.Items.RemoveAt(i);
+
+			int insertAt = firstSep + 1;
+			if (_systrayWallpapers.Count == 0)
+			{
+				var placeholder = new ToolStripMenuItem("No wallpapers") { Enabled = false };
+				menu.Items.Insert(insertAt, placeholder);
+			}
+			else
+			{
+				foreach (var wp in _systrayWallpapers)
+				{
+					var item = new ToolStripMenuItem(wp.Name ?? wp.Id ?? "Wallpaper");
+					string wpId = wp.Id ?? "";
+					item.Click += (s, e) => this.OnSystrayOpenWallpaper?.Invoke(this, wpId);
+					menu.Items.Insert(insertAt++, item);
+				}
+			}
+		}
 	}
 
 	public void TriggeredExitApp()
@@ -214,6 +344,9 @@ public class UserManager : IUserManager, IDisposable
 
 	public Task SetSystrayGamesAsync(IEnumerable<SystrayWallpaper> wallpapers)
 	{
+		_systrayWallpapers.Clear();
+		_systrayWallpapers.AddRange(wallpapers);
+		UpdateTrayWallpapers();
 		return Task.CompletedTask;
 	}
 
@@ -280,5 +413,11 @@ public class UserManager : IUserManager, IDisposable
 
 	public void Dispose()
 	{
+		if (_trayIcon != null)
+		{
+			_trayIcon.Visible = false;
+			_trayIcon.Dispose();
+			_trayIcon = null;
+		}
 	}
 }
