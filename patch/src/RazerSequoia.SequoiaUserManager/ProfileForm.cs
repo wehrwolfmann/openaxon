@@ -11,6 +11,7 @@ namespace RazerSequoia.SequoiaUserManager;
 public class ProfileForm : Form
 {
     private WebView2 _webView;
+    private readonly string _url;
 
     private static readonly string DataDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -19,9 +20,10 @@ public class ProfileForm : Form
     private static readonly string TokenFile = Path.Combine(DataDir, "wine_login_token.json");
     private static readonly string PrefsFile = Path.Combine(DataDir, "wine_prefs.json");
 
-    public ProfileForm()
+    public ProfileForm(string url = "https://id.razer.com/", string title = "Razer Axon")
     {
-        Text = "Razer Axon \u2014 Profile";
+        _url = url;
+        Text = title;
         Width = 1280;
         Height = 800;
         StartPosition = FormStartPosition.CenterScreen;
@@ -42,9 +44,7 @@ public class ProfileForm : Form
         {
             var env = await CoreWebView2Environment.CreateAsync(
                 null,
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Razer", "RazerAxon", "LoginWebView"),
+                Path.Combine(DataDir, "LoginWebView"),
                 null);
             await _webView.EnsureCoreWebView2Async(env);
 
@@ -89,13 +89,10 @@ public class ProfileForm : Form
             }
             catch { }
 
-            // Escape for embedding in JS string literal
             string escapedToken = JsonSerializer.Serialize(tokenJson);
             string escapedLang = JsonSerializer.Serialize(language);
             string escapedTheme = JsonSerializer.Serialize(theme);
 
-            // Natasha bridge shim — reports user as logged in,
-            // so SPA shows the full account/profile page
             string bridgeScript = @"
                 (function() {
                     var tokenData = " + escapedToken + @";
@@ -161,7 +158,7 @@ public class ProfileForm : Form
             ";
 
             await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(bridgeScript);
-            _webView.CoreWebView2.Navigate("https://id.razer.com/");
+            _webView.CoreWebView2.Navigate(_url);
         }
         catch (Exception ex)
         {

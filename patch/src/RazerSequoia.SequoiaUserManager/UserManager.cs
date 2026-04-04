@@ -219,48 +219,58 @@ public class UserManager : IUserManager, IDisposable
 
 	public Task OpenFeedbackWindowAsync()
 	{
+		ShowWebPage("https://www.razer.com/contact-us", "Razer Axon \u2014 Feedback");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenFeatureFeedbackWindowAsync()
 	{
+		ShowWebPage("https://www.razer.com/contact-us", "Razer Axon \u2014 Feature Feedback");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenSupportFeedbackWindowAsync()
 	{
+		ShowWebPage("https://mysupport.razer.com/", "Razer Axon \u2014 Support");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenCrashWindowAsync()
 	{
+		ShowWebPage("https://www.razer.com/contact-us", "Razer Axon \u2014 Report");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenProfileWindowAsync()
 	{
-		try
-		{
-			var thread = new Thread(() =>
-			{
-				Application.EnableVisualStyles();
-				Application.Run(new ProfileForm());
-			});
-			thread.SetApartmentState(ApartmentState.STA);
-			thread.Start();
-		}
-		catch { }
+		ShowWebPage("https://id.razer.com/", "Razer Axon \u2014 Profile");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenPasswordWindowAsync()
 	{
+		ShowWebPage("https://id.razer.com/", "Razer Axon \u2014 Change Password");
 		return Task.CompletedTask;
 	}
 
 	public Task OpenUpdateWindowAsync()
 	{
 		return Task.CompletedTask;
+	}
+
+	private void ShowWebPage(string url, string title)
+	{
+		try
+		{
+			var thread = new Thread(() =>
+			{
+				Application.EnableVisualStyles();
+				Application.Run(new ProfileForm(url, title));
+			});
+			thread.SetApartmentState(ApartmentState.STA);
+			thread.Start();
+		}
+		catch { }
 	}
 
 	public static string GetNatashaStateDescription()
