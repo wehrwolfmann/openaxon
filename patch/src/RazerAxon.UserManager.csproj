@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>RazerAxon.UserManager</AssemblyName>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <NoWarn>CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="RazerAxon.IUserManager">
+      <HintPath>ref/RazerAxon.IUserManager.dll</HintPath>
+    </Reference>
+    <Reference Include="RazerAxon.ISettingManager">
+      <HintPath>ref/RazerAxon.ISettingManager.dll</HintPath>
+    </Reference>
+    <Reference Include="RazerAxon.ILogger">
+      <HintPath>ref/RazerAxon.ILogger.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.WinForms">
+      <HintPath>ref/Microsoft.Web.WebView2.WinForms.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Core">
+      <HintPath>ref/Microsoft.Web.WebView2.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>ref/System.Windows.Forms.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

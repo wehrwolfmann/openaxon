@@ -92,6 +92,8 @@ def save_token(token_data: dict) -> None:
         "loginId": token_data.get("loginId", ""),
         "tokenExpiry": token_data.get("tokenExpiry", ""),
         "stayLoggedIn": True,
+        "avatarUrl": token_data.get("avatarUrl", ""),
+        "nickname": token_data.get("nickname", ""),
     }
 
     if not token_record["tokenExpiry"] and token_record["token"]:
@@ -246,11 +248,67 @@ class RazerLoginWindow(Gtk.Window):
             token_data = json.loads(data_str)
             if not token_data.get("uuid"):
                 token_data["uuid"] = self._user_id
-            save_token(token_data)
-            self._show_success(token_data.get("loginId", self._user_id))
+            self._token_data = token_data
+            # Phase 3: extract profile from localStorage
+            print("  Phase 3: Extracting profile...")
+            self._fetch_profile()
         except json.JSONDecodeError as e:
             print(f"  [error] Parse error: {e}", file=sys.stderr)
             print(f"  [error] Data (first 500): {data_str[:500]}", file=sys.stderr)
+
+    def _fetch_profile(self):
+        """Extract avatar/nickname from Razer ID localStorage."""
+        # Dump all localStorage keys and values to find profile data
+        js = """(function() {
+            var result = {};
+            for (var i = 0; i < localStorage.length; i++) {
+                var k = localStorage.key(i);
+                result[k] = localStorage.getItem(k);
+            }
+            return JSON.stringify(result);
+        })();"""
+        self.webview.evaluate_javascript(
+            js, -1, None, None, None,
+            self._on_profile_result, None)
+
+    def _on_profile_result(self, webview, result, user_data):
+        profile_data = {}
+        try:
+            js_value = webview.evaluate_javascript_finish(result)
+            raw = js_value.to_string()
+            profile_data = json.loads(raw) if raw else {}
+        except Exception as e:
+            print(f"  [phase3] Could not extract profile: {e}")
+
+        # Find current user's profile in the "users" array
+        avatar_url = None
+        nickname = None
+        users_raw = profile_data.get("users", "")
+        if users_raw:
+            try:
+                users = json.loads(users_raw)
+                if isinstance(users, list):
+                    for u in users:
+                        if u.get("userId") == self._user_id:
+                            avatar_url = u.get("avatar")
+                            nickname = u.get("razerId")
+                            break
+                    # Fallback to first user if no match
+                    if not avatar_url and users:
+                        avatar_url = users[0].get("avatar")
+                        nickname = nickname or users[0].get("razerId")
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        if avatar_url:
+            self._token_data["avatarUrl"] = avatar_url
+            print(f"  [phase3] Avatar: {avatar_url}")
+        if nickname:
+            self._token_data["nickname"] = nickname
+            print(f"  [phase3] Nickname: {nickname}")
+
+        save_token(self._token_data)
+        self._show_success(self._token_data.get("loginId", self._user_id))
 
     def _show_success(self, login_id):
         dialog = Gtk.MessageDialog(
