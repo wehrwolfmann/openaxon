@@ -244,7 +244,7 @@ public class UserManager : IUserManager, IDisposable
 			var thread = new Thread(() =>
 			{
 				Application.EnableVisualStyles();
-				Application.Run(new ProfileForm(Profile, User));
+				Application.Run(new ProfileForm());
 			});
 			thread.SetApartmentState(ApartmentState.STA);
 			thread.Start();
