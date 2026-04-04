@@ -128,8 +128,8 @@ main() {
     wine RazerAxon.exe -showui "$@" &>/dev/null &
     local wine_pid=$!
 
-    # Wait for window (timeout 30s)
-    local timeout=30
+    # Wait for window (timeout 60s)
+    local timeout=60
     local elapsed=0
     local wid=""
     while [ -z "$wid" ] && [ $elapsed -lt $timeout ]; do

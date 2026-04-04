@@ -223,7 +223,7 @@ public class UserManager : IUserManager, IDisposable
 			_trayIcon.MouseClick += (s, e) =>
 			{
 				if (e.Button == MouseButtons.Left)
-					this.OnSystrayOpenWallpaper?.Invoke(this, "");
+					FireOpenWallpaper("");
 			};
 
 			Application.Run();
@@ -257,12 +257,11 @@ public class UserManager : IUserManager, IDisposable
 
 		var openItem = new ToolStripMenuItem("Razer Axon");
 		openItem.Font = new Font(openItem.Font, FontStyle.Bold);
-		openItem.Click += (s, e) => this.OnSystrayOpenWallpaper?.Invoke(this, "");
+		openItem.Click += (s, e) => FireOpenWallpaper("");
 		menu.Items.Add(openItem);
 
 		menu.Items.Add(new ToolStripSeparator());
 
-		// Wallpaper items will be added by SetSystrayGamesAsync
 		var wallpaperPlaceholder = new ToolStripMenuItem("No wallpapers") { Enabled = false };
 		wallpaperPlaceholder.Name = "wallpapers_placeholder";
 		menu.Items.Add(wallpaperPlaceholder);
@@ -274,11 +273,7 @@ public class UserManager : IUserManager, IDisposable
 		menu.Items.Add(profileItem);
 
 		var exitItem = new ToolStripMenuItem("Exit");
-		exitItem.Click += (s, e) =>
-		{
-			this.SystrayExitApp?.Invoke(this, EventArgs.Empty);
-			this.OnUserExitAppTriggered?.Invoke(this, EventArgs.Empty);
-		};
+		exitItem.Click += (s, e) => FireExit();
 		menu.Items.Add(exitItem);
 
 		return menu;
@@ -289,14 +284,12 @@ public class UserManager : IUserManager, IDisposable
 		if (_trayIcon?.ContextMenuStrip == null) return;
 
 		var menu = _trayIcon.ContextMenuStrip;
-		// Invoke on the menu's thread
 		if (menu.InvokeRequired)
 		{
 			menu.Invoke(new Action(UpdateTrayWallpapers));
 			return;
 		}
 
-		// Remove old wallpaper items (between first separator and second separator)
 		int firstSep = -1;
 		int secondSep = -1;
 		for (int i = 0; i < menu.Items.Count; i++)
@@ -325,7 +318,7 @@ public class UserManager : IUserManager, IDisposable
 				{
 					var item = new ToolStripMenuItem(wp.Name ?? wp.Id ?? "Wallpaper");
 					string wpId = wp.Id ?? "";
-					item.Click += (s, e) => this.OnSystrayOpenWallpaper?.Invoke(this, wpId);
+					item.Click += (s, e) => FireOpenWallpaper(wpId);
 					menu.Items.Insert(insertAt++, item);
 				}
 			}
@@ -404,6 +397,15 @@ public class UserManager : IUserManager, IDisposable
 			thread.Start();
 		}
 		catch { }
+	}
+
+	internal void FireOpenWallpaper(string id) =>
+		this.OnSystrayOpenWallpaper?.Invoke(this, id);
+
+	internal void FireExit()
+	{
+		this.SystrayExitApp?.Invoke(this, EventArgs.Empty);
+		this.OnUserExitAppTriggered?.Invoke(this, EventArgs.Empty);
 	}
 
 	public static string GetNatashaStateDescription()
