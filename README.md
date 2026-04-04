@@ -1,23 +1,23 @@
-# Razer Axon on Linux
+# Razer Axon на Linux
 
-Run [Razer Axon](https://www.razer.com/software/axon) wallpaper engine on Linux via Wine — with login support, taskbar fixes, and wallpaper decryption.
+Запуск [Razer Axon](https://www.razer.com/software/axon) на Linux через Wine — с поддержкой авторизации, фиксами панели задач и расшифровкой обоев.
 
-## What's included
+## Что входит в комплект
 
-| File | Description |
-|------|-------------|
-| `razer-login.py` | Login to Razer ID without Razer Central |
-| `razer-axon.sh` | Launch script with Wine/WebView2 and taskbar fixes |
-| `razer-axon-decrypt.py` | Extract encrypted wallpaper videos |
-| `patch/RazerAxon.UserManager.dll` | Patched DLL — replaces Razer Central auth with standalone login |
+| Файл | Описание |
+|------|----------|
+| `razer-login.py` | Авторизация в Razer ID без Razer Central |
+| `razer-axon.sh` | Скрипт запуска с Wine/WebView2 и фиксами панели задач |
+| `razer-axon-decrypt.py` | Извлечение зашифрованных видео-обоев |
+| `patch/RazerAxon.UserManager.dll` | Патченная DLL — заменяет авторизацию через Razer Central на самостоятельный вход |
 
-## Requirements
+## Зависимости
 
-- **Wine** (tested with Wine 9.x / 10.x)
+- **Wine** (проверено с Wine 9.x / 10.x)
 - **Python 3.10+**
-- **PyGObject** with WebKit2 (`webkit2gtk-4.1`)
-- **xdotool**, **xprop** (for taskbar fix on X11)
-- **7z** or **unzip** (for wallpaper decryption)
+- **PyGObject** с WebKit2 (`webkit2gtk-4.1`)
+- **xdotool**, **xprop** (для фикса панели задач на X11)
+- **7z** или **unzip** (для расшифровки обоев)
 
 ### Arch Linux / CachyOS
 
@@ -37,102 +37,117 @@ sudo apt install wine python3-gi gir1.2-webkit2-4.1 xdotool x11-utils p7zip-full
 sudo dnf install wine python3-gobject webkit2gtk4.1 xdotool xprop p7zip
 ```
 
-## Installation
+## Установка
 
-### 1. Install Razer Axon via Wine
+### 1. Установка Razer Axon через Wine
 
 ```bash
-# Download the installer
+# Скачать установщик
 wget -O /tmp/RazerAxonInstaller.exe "https://rzr.to/axon"
 
-# Install
+# Установить
 wine /tmp/RazerAxonInstaller.exe
 ```
 
-Follow the installer. Default path: `C:\Program Files (x86)\Razer\Razer Axon`.
+Следуйте установщику. Путь по умолчанию: `C:\Program Files (x86)\Razer\Razer Axon`.
 
-### 2. Patch the UserManager DLL
+### 2. Замена DLL UserManager
 
-The original `RazerAxon.UserManager.dll` requires Razer Central (a Windows-only service) for authentication. The patched version replaces this with a standalone login flow that reads tokens from a local JSON file.
+Оригинальная `RazerAxon.UserManager.dll` требует Razer Central (Windows-сервис) для авторизации. Патченная версия заменяет это на самостоятельный вход, читая токены из локального JSON-файла.
 
 ```bash
 AXON_DIR="$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon"
 
-# Backup original
+# Бэкап оригинала
 cp "$AXON_DIR/RazerAxon.UserManager.dll" "$AXON_DIR/RazerAxon.UserManager.dll.orig"
 
-# Apply patch
+# Применить патч
 cp patch/RazerAxon.UserManager.dll "$AXON_DIR/"
 ```
 
-### 3. Install scripts
+### 3. Установка скриптов
 
 ```bash
 cp razer-axon.sh razer-login.py razer-axon-decrypt.py ~/.local/bin/
 chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-axon-decrypt.py
 ```
 
-### 4. Login to Razer ID
+### 4. Вход в Razer ID
 
 ```bash
 razer-login.py
 ```
 
-This opens a WebKit window with the Razer ID login page. After you log in, the script captures your JWT token and saves it to `wine_login_token.json` where the patched DLL expects it.
+Откроется окно WebKit со страницей входа Razer ID. После авторизации скрипт перехватывает JWT-токен и сохраняет его в `wine_login_token.json`, откуда его читает патченная DLL.
 
-The login uses a two-phase approach:
-1. **Phase 1** — Opens id.razer.com as a normal website for login
-2. **Phase 2** — After login detected, reloads with a "natasha bridge" shim to extract the JWT token
+Вход проходит в два этапа:
+1. **Этап 1** — Открывает id.razer.com как обычный сайт для входа
+2. **Этап 2** — После обнаружения входа перезагружает страницу с «natasha bridge» shim для извлечения JWT-токена
 
-### 5. Launch Razer Axon
+### 5. Запуск Razer Axon
 
 ```bash
 razer-axon.sh
 ```
 
-## Usage
+## Использование
 
-### Login / Token refresh
+### Вход / обновление токена
 
 ```bash
-razer-login.py            # Open login window
-razer-login.py --status   # Check current token status
+razer-login.py            # Открыть окно входа
+razer-login.py --status   # Проверить статус текущего токена
 ```
 
-Tokens expire after ~24 hours. Re-run `razer-login.py` when expired.
+Токены истекают примерно через 24 часа. Перезапустите `razer-login.py` для обновления.
 
-### Launch
+### Запуск
 
 ```bash
-razer-axon.sh             # Start Razer Axon
+razer-axon.sh             # Запустить Razer Axon
 ```
 
-The launch script:
-- Sets Wine environment variables for WebView2 compatibility
-- If Axon is already running, activates the existing window
-- Reactively fixes taskbar visibility (Wine sets `WM_TRANSIENT_FOR` which hides the window from the taskbar — the script watches for this and removes it)
+Скрипт запуска:
+- Устанавливает переменные окружения Wine для совместимости с WebView2
+- Если Axon уже запущен, активирует существующее окно
+- Реактивно исправляет видимость в панели задач (Wine устанавливает `WM_TRANSIENT_FOR`, что скрывает окно из панели задач — скрипт отслеживает это и удаляет атрибут)
 
-### Decrypt wallpapers
+### Расшифровка обоев
 
-Razer Axon stores downloaded wallpapers as ZipCrypto-encrypted ZIP archives disguised with `.mp4` extensions.
+Razer Axon хранит скачанные обои как ZipCrypto-зашифрованные ZIP-архивы, замаскированные под `.mp4`.
 
 ```bash
-# Auto-scan and extract all wallpapers
+# Автосканирование и извлечение всех обоев
 razer-axon-decrypt.py
 
-# Show passwords without extracting
+# Показать только пароли
 razer-axon-decrypt.py -p
 
-# Custom directories
-razer-axon-decrypt.py -d /path/to/wallpapers -o /path/to/output
+# Пробный запуск (без извлечения)
+razer-axon-decrypt.py -n
 
-# Single file
+# Пропустить уже извлечённые
+razer-axon-decrypt.py -s
+
+# Свои директории
+razer-axon-decrypt.py -d /путь/к/обоям -o /путь/к/выходу
+
+# Один файл
 razer-axon-decrypt.py -f wallpaper.mp4 -c ResourceConfig.txt
+
+# JSON-вывод (для автоматизации)
+razer-axon-decrypt.py -j
+
+# Английский интерфейс
+razer-axon-decrypt.py --lang en
+
+# Подробный вывод (debug)
+razer-axon-decrypt.py -v
 ```
 
-#### How decryption works
+#### Как работает расшифровка
 
-Each wallpaper's password is derived from its `ResourceConfig.txt`:
+Пароль каждого обоя вычисляется из его `ResourceConfig.txt`:
 
 ```python
 import hmac, hashlib
@@ -140,11 +155,11 @@ content = open("ResourceConfig.txt").read()
 password = hmac.new(b"j6l-aUmhCc@tN%T_", content.encode(), hashlib.sha256).hexdigest()
 ```
 
-The HMAC key is hardcoded in Razer Axon's .NET assemblies.
+HMAC-ключ захардкожен в .NET-сборках Razer Axon.
 
-## How it works
+## Как это работает
 
-### Architecture
+### Архитектура
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -152,38 +167,38 @@ The HMAC key is hardcoded in Razer Axon's .NET assemblies.
 │                                                     │
 │  RazerAxon.exe                                      │
 │       │                                             │
-│       ├── RazerAxon.UserManager.dll (PATCHED)       │
+│       ├── RazerAxon.UserManager.dll (ПАТЧ)          │
 │       │       │                                     │
-│       │       ├── Reads wine_login_token.json        │
-│       │       └── No Razer Central dependency       │
+│       │       ├── Читает wine_login_token.json      │
+│       │       └── Без зависимости от Razer Central  │
 │       │                                             │
 │       ├── WebView2 UI ──► axon-api.razer.com        │
 │       │                                             │
 │       └── WallpaperPlayerManager                    │
-│               └── Decrypts ZIP → plays MP4          │
+│               └── Расшифровка ZIP → воспроизведение  │
 │                                                     │
 ├─────────────────────────────────────────────────────┤
 │ Linux                                               │
 │                                                     │
-│  razer-login.py ──► id.razer.com ──► JWT token      │
-│  razer-axon.sh ──► Wine + env/taskbar fixes          │
+│  razer-login.py ──► id.razer.com ──► JWT-токен      │
+│  razer-axon.sh ──► Wine + фиксы окружения/панели    │
 │  razer-axon-decrypt.py ──► HMAC-SHA256 → unzip      │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Patched DLL details
+### Подробности о патченной DLL
 
-The original `RazerAxon.UserManager.dll` communicates with Razer Central via named pipes (`NacClient`) for authentication. Since Razer Central doesn't run under Wine, the patched DLL:
+Оригинальная `RazerAxon.UserManager.dll` общается с Razer Central через именованные каналы (`NacClient`) для авторизации. Поскольку Razer Central не работает под Wine, патченная DLL:
 
-- Removes all Razer Central / AccountManager dependencies
-- Adds a `RazerLoginForm` with WebView2 for direct Razer ID login
-- Stores/loads tokens from `wine_login_token.json` in AppData
-- Exposes the same `IUserManager` interface to the rest of Razer Axon
+- Убирает все зависимости от Razer Central / AccountManager
+- Добавляет `RazerLoginForm` с WebView2 для прямого входа в Razer ID
+- Хранит/загружает токены из `wine_login_token.json` в AppData
+- Предоставляет тот же интерфейс `IUserManager` остальной части Razer Axon
 
-Source was compiled from `/tmp/razer_usershim/` targeting `net6.0-windows`.
+Исходник скомпилирован из `/tmp/razer_usershim/` под `net6.0-windows`.
 
-### Token format
+### Формат токена
 
 `~/.wine/drive_c/users/<USER>/AppData/Local/Razer/RazerAxon/wine_login_token.json`:
 
@@ -200,35 +215,35 @@ Source was compiled from `/tmp/razer_usershim/` targeting `net6.0-windows`.
 }
 ```
 
-### Wallpaper encryption
+### Шифрование обоев
 
-Wallpapers in `~/RazerAxonWallpapers/<id>/Resource/` are ZipCrypto-encrypted ZIP archives:
+Обои в `~/RazerAxonWallpapers/<id>/Resource/` — это ZipCrypto-зашифрованные ZIP-архивы:
 
 ```
 password = HMAC-SHA256("j6l-aUmhCc@tN%T_", ResourceConfig.txt).hexdigest()
 ```
 
-## Troubleshooting
+## Решение проблем
 
-### Axon shows blank/white window
-Make sure WebView2 runtime is installed in Wine:
+### Axon показывает пустое/белое окно
+Убедитесь, что WebView2 runtime установлен в Wine:
 ```bash
-# Axon installer should handle this, but if not:
+# Установщик Axon должен сделать это автоматически, но если нет:
 winetricks -q webview2
 ```
 
-### Token expired
+### Токен истёк
 ```bash
-razer-login.py --status   # Check
-razer-login.py            # Refresh
+razer-login.py --status   # Проверить
+razer-login.py            # Обновить
 ```
 
-### Window not visible in taskbar
-The launch script handles this automatically. If it still happens, check that `xdotool` and `xprop` are installed.
+### Окно не видно в панели задач
+Скрипт запуска исправляет это автоматически. Если проблема остаётся, убедитесь, что `xdotool` и `xprop` установлены.
 
-### Wallpaper decryption fails
-Ensure `7z` or `unzip` is installed and supports ZipCrypto.
+### Расшифровка обоев не работает
+Убедитесь, что `7z` или `unzip` установлен и поддерживает ZipCrypto.
 
-## License
+## Лицензия
 
 MIT
