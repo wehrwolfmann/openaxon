@@ -241,11 +241,13 @@ public class UserManager : IUserManager, IDisposable
 	{
 		try
 		{
-			Process.Start(new ProcessStartInfo("https://id.razer.com/")
+			var thread = new Thread(() =>
 			{
-				UseShellExecute = true,
-				Verb = "open"
+				Application.EnableVisualStyles();
+				Application.Run(new ProfileForm(Profile, User));
 			});
+			thread.SetApartmentState(ApartmentState.STA);
+			thread.Start();
 		}
 		catch { }
 		return Task.CompletedTask;
