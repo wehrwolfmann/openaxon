@@ -1,4 +1,4 @@
-# Razer Axon на Linux
+# OpenAxon — Razer Axon на Linux
 
 Запуск [Razer Axon](https://www.razer.com/software/axon) на Linux через Wine — с поддержкой авторизации, фиксами панели задач и расшифровкой обоев.
 
