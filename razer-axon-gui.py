@@ -889,6 +889,240 @@ class DetailDialog:
         btn.add_css_class("destructive-action")
 
 
+# ── Artist page ──────────────────────────────────────────────────────
+
+class ArtistPage:
+    """Full artist page: banner, bio, social links, gallery, series."""
+
+    def __init__(self, artist_summary: dict, app: "AxonApp"):
+        self.artist_id = artist_summary["artist_id"]
+        self.app = app
+        self._detail = None
+
+    def show(self):
+        threading.Thread(target=self._load, daemon=True).start()
+
+    def _load(self):
+        detail = api_get("artist/detail", {"artist_id": self.artist_id}, auth=self.app.auth)
+        wallpapers = api_get("wallpaper/list", {
+            "pi": "1", "ps": "30", "artist_id": self.artist_id, "not_offical": "true"
+        }, auth=self.app.auth)
+        collections = api_get("collection/list", {
+            "pi": "1", "ps": "10", "artist_id": self.artist_id
+        }, auth=self.app.auth)
+
+        if detail and detail.get("code") == 200:
+            self._detail = detail["data"]
+            wp_list = wallpapers["data"].get("list", []) if wallpapers and wallpapers.get("code") == 200 else []
+            wp_count = wallpapers["data"].get("count", 0) if wallpapers and wallpapers.get("code") == 200 else 0
+            coll_list = collections["data"].get("list", []) if collections and collections.get("code") == 200 else []
+            GLib.idle_add(self._build, wp_list, wp_count, coll_list)
+
+    def _build(self, wallpapers, wp_count, collections):
+        d = self._detail
+
+        dialog = Adw.Dialog()
+        dialog.set_title(d.get("name", ""))
+        dialog.set_content_width(900)
+        dialog.set_content_height(700)
+
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+
+        # ── Banner with overlay info ──
+        banner_overlay = Gtk.Overlay()
+        banner_overlay.set_size_request(-1, 200)
+
+        # Background image
+        self._banner_pic = Gtk.Picture()
+        self._banner_pic.set_content_fit(Gtk.ContentFit.COVER)
+        self._banner_pic.set_size_request(-1, 200)
+        banner_overlay.set_child(self._banner_pic)
+
+        bg_url = d.get("background", "")
+        if bg_url:
+            threading.Thread(target=self._load_img,
+                             args=(bg_url, self._banner_pic, f"artist_bg_{self.artist_id}"),
+                             daemon=True).start()
+
+        # Info overlay on banner (left side)
+        info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        info_box.set_valign(Gtk.Align.END)
+        info_box.set_halign(Gtk.Align.START)
+        info_box.set_margin_start(20)
+        info_box.set_margin_bottom(16)
+
+        # Avatar + Name row
+        name_row = Gtk.Box(spacing=10)
+        name_row.set_valign(Gtk.Align.CENTER)
+        self._avatar_pic = Gtk.Picture()
+        self._avatar_pic.set_content_fit(Gtk.ContentFit.COVER)
+        self._avatar_pic.set_size_request(40, 40)
+        name_row.append(self._avatar_pic)
+
+        avatar_url = d.get("avatar", "")
+        if avatar_url:
+            threading.Thread(target=self._load_img,
+                             args=(avatar_url, self._avatar_pic, f"artist_av_{self.artist_id}"),
+                             daemon=True).start()
+
+        name_label = Gtk.Label(label=d.get("name", ""))
+        name_label.set_markup(f'<b><span size="large" color="white">{GLib.markup_escape_text(d.get("name", ""))}</span></b>')
+        name_row.append(name_label)
+        info_box.append(name_row)
+
+        # Follow status
+        is_followed = d.get("is_followed", 0)
+        follow_label = Gtk.Label()
+        follow_label.set_markup(f'<span color="#44d62c" size="small">{"FOLLOWING" if is_followed else "FOLLOW"}</span>')
+        follow_label.set_xalign(0)
+        info_box.append(follow_label)
+
+        # Social links row
+        links = d.get("links", [])
+        if links:
+            links_box = Gtk.Box(spacing=8)
+            for link in links:
+                link_btn = Gtk.Button(label=link.get("icon_name", "🔗"))
+                link_btn.add_css_class("flat")
+                link_btn.set_tooltip_text(link.get("url", ""))
+                url = link.get("url", "")
+                link_btn.connect("clicked", lambda b, u=url: subprocess.Popen(
+                    ["xdg-open", u], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+                links_box.append(link_btn)
+            info_box.append(links_box)
+
+        banner_overlay.add_overlay(info_box)
+        page.append(banner_overlay)
+
+        # ── Description ──
+        desc = d.get("description", "") or d.get("brief_description", "")
+        if desc:
+            desc_box = Gtk.Box()
+            desc_box.set_margin_start(20)
+            desc_box.set_margin_end(20)
+            desc_box.set_margin_top(12)
+            desc_label = Gtk.Label(label=desc)
+            desc_label.set_wrap(True)
+            desc_label.set_xalign(0)
+            desc_label.add_css_class("axon-author")
+            desc_box.append(desc_label)
+            page.append(desc_box)
+
+        # ── Tabs: Gallery / Series ──
+        tabs_box = Gtk.Box(spacing=0)
+        tabs_box.add_css_class("axon-tabs")
+        tabs_box.set_margin_top(8)
+
+        gallery_btn = Gtk.Button(label=tr("gallery").upper() if tr("gallery") else "GALLERY")
+        gallery_btn.add_css_class("tab-active")
+        tabs_box.append(gallery_btn)
+
+        series_btn = Gtk.Button(label=tr("series").upper() if tr("series") else "SERIES")
+        tabs_box.append(series_btn)
+
+        page.append(tabs_box)
+
+        # ── Content stack for gallery/series ──
+        stack = Gtk.Stack()
+        stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+
+        # Gallery grid
+        gallery = Gtk.FlowBox()
+        gallery.set_homogeneous(True)
+        gallery.set_max_children_per_line(6)
+        gallery.set_min_children_per_line(2)
+        gallery.set_column_spacing(10)
+        gallery.set_row_spacing(10)
+        gallery.set_margin_start(20)
+        gallery.set_margin_end(20)
+        gallery.set_margin_top(12)
+        gallery.set_margin_bottom(12)
+        gallery.set_selection_mode(Gtk.SelectionMode.NONE)
+
+        for wp in wallpapers:
+            card = WallpaperCard(wp, self.app)
+            gallery.append(card)
+            fb_child = card.get_parent()
+            if fb_child:
+                fb_child.set_focusable(False)
+
+        stack.add_named(gallery, "gallery")
+
+        # Series list
+        series_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        series_box.set_margin_start(20)
+        series_box.set_margin_end(20)
+        series_box.set_margin_top(12)
+
+        if collections:
+            for coll in collections:
+                coll_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                coll_title = Gtk.Label(label=coll.get("title", ""))
+                coll_title.set_xalign(0)
+                coll_title.add_css_class("axon-title")
+                coll_row.append(coll_title)
+
+                coll_desc = coll.get("brief_description", "")
+                if coll_desc:
+                    cd = Gtk.Label(label=coll_desc[:120])
+                    cd.set_xalign(0)
+                    cd.set_wrap(True)
+                    cd.add_css_class("axon-author")
+                    coll_row.append(cd)
+
+                # Thumbnails
+                thumb_scroll = Gtk.ScrolledWindow()
+                thumb_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+                thumb_scroll.set_size_request(-1, 100)
+                thumb_box = Gtk.Box(spacing=6)
+                coll_wallpapers = coll.get("wallpapers", [])
+                if isinstance(coll_wallpapers, list):
+                    for wp in coll_wallpapers[:8]:
+                        if isinstance(wp, dict):
+                            thumb = Gtk.Picture()
+                            thumb.set_content_fit(Gtk.ContentFit.COVER)
+                            thumb.set_size_request(160, 90)
+                            thumb_box.append(thumb)
+                            thumb_url = wp.get("thumbnail", "")
+                            wid = wp.get("wallpaper_id", str(id(wp)))
+                            if thumb_url:
+                                threading.Thread(target=self._load_img,
+                                                 args=(thumb_url, thumb, f"as_{wid}"),
+                                                 daemon=True).start()
+                thumb_scroll.set_child(thumb_box)
+                coll_row.append(thumb_scroll)
+                series_box.append(coll_row)
+        else:
+            no_series = Gtk.Label(label="No series")
+            no_series.add_css_class("axon-status")
+            series_box.append(no_series)
+
+        stack.add_named(series_box, "series")
+        page.append(stack)
+
+        # Tab switching
+        gallery_btn.connect("clicked", lambda b: (
+            stack.set_visible_child_name("gallery"),
+            gallery_btn.add_css_class("tab-active"),
+            series_btn.remove_css_class("tab-active"),
+        ))
+        series_btn.connect("clicked", lambda b: (
+            stack.set_visible_child_name("series"),
+            series_btn.add_css_class("tab-active"),
+            gallery_btn.remove_css_class("tab-active"),
+        ))
+
+        scroll.set_child(page)
+        dialog.set_child(scroll)
+        dialog.present(self.app.win)
+
+    def _load_img(self, url, widget, cache_id):
+        path = download_thumbnail(url, cache_id)
+        if path:
+            GLib.idle_add(widget.set_filename, str(path))
+
+
 # ── Main application ─────────────────────────────────────────────────
 
 class AxonApp(Adw.Application):
@@ -1086,6 +1320,7 @@ class AxonApp(Adw.Application):
             btn.connect("clicked", self._on_tab, tab_id)
             self._tab_buttons[tab_id] = btn
             tabs.append(btn)
+        self._tabs_bar = tabs
         root.append(tabs)
 
         # 3. Filter bar
@@ -1104,6 +1339,7 @@ class AxonApp(Adw.Application):
         clear_btn.add_css_class("axon-clear-btn")
         clear_btn.connect("clicked", self._on_clear_filters)
         filters.append(clear_btn)
+        self._filters_bar = filters
         root.append(filters)
 
         # 4. Main: sidebar + content
@@ -1117,6 +1353,7 @@ class AxonApp(Adw.Application):
         self.sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.sidebar.add_css_class("axon-sidebar")
         sidebar_scroll.set_child(self.sidebar)
+        self._sidebar_scroll = sidebar_scroll
         body.append(sidebar_scroll)
 
         # Content stack (wallpapers / series / authors)
@@ -1299,8 +1536,13 @@ class AxonApp(Adw.Application):
             else:
                 nbtn.remove_css_class("axon-topbar-active")
 
+        # Show/hide gallery-specific UI
+        is_gallery = nav_id == "gallery"
+        self._tabs_bar.set_visible(is_gallery)
+        self._filters_bar.set_visible(is_gallery)
+        self._sidebar_scroll.set_visible(is_gallery)
+
         if nav_id == "gallery":
-            # Show gallery tabs + filters + sidebar
             self.content_stack.set_visible_child_name(self._active_tab)
         elif nav_id == "community":
             self.content_stack.set_visible_child_name("community")
@@ -1309,7 +1551,7 @@ class AxonApp(Adw.Application):
                 threading.Thread(target=self._load_community, daemon=True).start()
         elif nav_id == "library":
             self.content_stack.set_visible_child_name("library")
-            self._library_loaded = False  # Always refresh
+            self._library_loaded = False
             threading.Thread(target=self._load_library, daemon=True).start()
         elif nav_id == "create":
             self.toast(tr("coming_soon"))
@@ -1650,13 +1892,8 @@ class AxonApp(Adw.Application):
             GLib.idle_add(widget.set_filename, str(path))
 
     def _browse_artist(self, artist):
-        """Switch to wallpapers tab filtered by this artist."""
-        self._on_tab(None, "wallpapers")
-        self._category_id = ""
-        self._search_query = ""
-        self._artist_filter = artist["artist_id"]
-        self._load_wallpapers(page=1, clear=True)
-        self.search_entry.set_text(f"{tr('artist_prefix')}: {artist['name']}")
+        """Open artist page dialog."""
+        ArtistPage(artist, self).show()
 
     def _on_load_more(self, btn):
         self._load_wallpapers(page=self._current_page + 1, clear=False)
