@@ -1182,11 +1182,11 @@ class AxonApp(Adw.Application):
             /* ── Top green nav bar: height:48px; background:#44d62c ── */
             .axon-topbar { background-color: #44d62c; padding: 0 8px; min-height: 48px; }
             .axon-topbar-logo { color: #000; font-weight: 800; font-size: 16px; padding: 0 16px; }
-            .axon-topbar button { color: #107100; background: transparent; border: none;
+            .axon-topbar button { color: #0a5500; background: transparent; border: none;
                                   font-weight: 700; font-size: 14px; padding: 0 20px;
                                   min-height: 48px; border-radius: 0; }
-            .axon-topbar button:hover { color: #000; }
-            .axon-topbar-active { color: #000; }
+            .axon-topbar button:hover { color: #000; background-color: rgba(0,0,0,0.1); }
+            .axon-topbar-active { color: #000; background-color: rgba(0,0,0,0.08); }
             .axon-topbar-right button { color: rgba(0,0,0,0.5); padding: 0 8px;
                                         min-width: 32px; min-height: 48px; }
             .axon-topbar-right button:hover { color: #000; }
@@ -1277,12 +1277,6 @@ class AxonApp(Adw.Application):
         topbar = Gtk.Box(spacing=0)
         topbar.add_css_class("axon-topbar")
 
-        # Drag to move window
-        drag = Gtk.GestureDrag()
-        drag.connect("drag-begin", lambda g, x, y: self.win.get_surface().begin_move(
-            g.get_device(), g.get_current_button(), x, y, GLib.get_monotonic_time() // 1000))
-        topbar.add_controller(drag)
-
         # Logo
         logo = Gtk.Label()
         logo.set_markup("<b>⬡ AXON</b>")
@@ -1295,13 +1289,17 @@ class AxonApp(Adw.Application):
             btn = Gtk.Button(label=tr(nav_id))
             if nav_id == "gallery":
                 btn.add_css_class("axon-topbar-active")
-            btn.connect("clicked", self._on_nav, nav_id)
+            btn.connect("clicked", lambda b, nid=nav_id: self._on_nav(b, nid))
             self._nav_buttons[nav_id] = btn
             topbar.append(btn)
 
-        # Spacer
+        # Spacer — drag to move window only on empty space
         spacer = Gtk.Box()
         spacer.set_hexpand(True)
+        drag = Gtk.GestureDrag()
+        drag.connect("drag-begin", lambda g, x, y: self.win.get_surface().begin_move(
+            g.get_device(), g.get_current_button(), x, y, GLib.get_monotonic_time() // 1000))
+        spacer.add_controller(drag)
         topbar.append(spacer)
 
         # Search
