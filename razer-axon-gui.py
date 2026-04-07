@@ -1173,74 +1173,97 @@ class AxonApp(Adw.Application):
         # Toast overlay
         self.toast_overlay = Adw.ToastOverlay()
 
-        # ── Razer Axon CSS ──
+        # ── Razer Axon CSS — pixel-matched from original ──
         css = Gtk.CssProvider()
         css.load_from_string("""
-            window, .axon-main { background-color: #0d0d0d; }
+            /* Base — original uses #1a1a1a body, #000 sidebar */
+            window, .axon-main { background-color: #1a1a1a; }
 
-            /* Green top bar */
-            .axon-topbar { background-color: #44d62c; padding: 0 8px; min-height: 36px; }
-            .axon-topbar-logo { color: #000; font-weight: 800; font-size: 14px; padding: 0 12px; }
-            .axon-topbar button { color: rgba(0,0,0,0.7); background: transparent; border: none;
-                                  font-weight: 700; font-size: 12px; padding: 8px 12px; border-radius: 0; }
-            .axon-topbar button:hover { color: #000; background-color: rgba(0,0,0,0.1); }
-            .axon-topbar-active { color: #000; background-color: rgba(0,0,0,0.15); }
-            .axon-topbar-right button { color: rgba(0,0,0,0.6); padding: 6px; min-width: 28px; min-height: 28px; }
+            /* ── Top green nav bar: height:48px; background:#44d62c ── */
+            .axon-topbar { background-color: #44d62c; padding: 0 8px; min-height: 48px; }
+            .axon-topbar-logo { color: #000; font-weight: 800; font-size: 16px; padding: 0 16px; }
+            .axon-topbar button { color: #107100; background: transparent; border: none;
+                                  font-weight: 700; font-size: 14px; padding: 0 20px;
+                                  min-height: 48px; border-radius: 0; }
+            .axon-topbar button:hover { color: #000; }
+            .axon-topbar-active { color: #000; }
+            .axon-topbar-right button { color: rgba(0,0,0,0.5); padding: 0 8px;
+                                        min-width: 32px; min-height: 48px; }
             .axon-topbar-right button:hover { color: #000; }
 
-            /* Sub-tabs row */
-            .axon-tabs { background-color: #161616; border-bottom: 1px solid #222; padding: 0 50px; }
-            .axon-tabs button { color: #777; background: transparent; border: none; font-weight: 700;
-                                font-size: 12px; padding: 10px 18px; border-bottom: 2px solid transparent; border-radius: 0; }
-            .axon-tabs button:hover { color: #ccc; }
+            /* ── Sub-tabs: height:48px; background:#1a1a1a ── */
+            .axon-tabs { background-color: #1a1a1a; border-bottom: 1px solid #222;
+                         padding: 0 48px; min-height: 48px; }
+            .axon-tabs button { color: #909090; background: transparent; border: none;
+                                font-weight: 700; font-size: 14px; padding: 0 20px;
+                                min-height: 48px; border-bottom: 3px solid transparent; border-radius: 0; }
+            .axon-tabs button:hover { color: #fff; }
             .axon-tabs button.tab-active { color: #fff; border-bottom-color: #44d62c; }
 
-            /* Filters row */
-            .axon-filters { background-color: #161616; padding: 6px 50px; border-bottom: 1px solid #1a1a1a; }
-            .axon-filters checkbutton { color: #888; font-size: 12px; }
-            .axon-clear-btn { color: #555; font-size: 12px; }
-            .axon-clear-btn:hover { color: #999; }
-            .axon-search { background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px;
-                           color: #888; padding: 4px 12px; min-height: 26px; min-width: 180px; font-size: 12px; }
+            /* ── Filter bar: background:#222; height:46px ── */
+            .axon-filters { background-color: #222; padding: 0 16px; min-height: 46px;
+                            border-bottom: 1px solid #111; }
+            .axon-filters checkbutton { color: #eee; font-size: 13px; }
+            .axon-clear-btn { color: #909090; font-size: 13px; }
+            .axon-clear-btn:hover { color: #fff; }
+            .axon-search { background-color: #1a1a1a; border: 1px solid #333; border-radius: 4px;
+                           color: #999; padding: 4px 12px; min-height: 28px; min-width: 200px; font-size: 13px; }
 
-            /* Sidebar */
-            .axon-sidebar { background-color: #0d0d0d; border-right: 1px solid #1a1a1a; }
-            .axon-sidebar button { border-radius: 0; padding: 8px 14px; color: #666; border: none;
-                                   background: transparent; font-size: 11px; font-weight: 600; }
-            .axon-sidebar button:hover { background-color: #161616; color: #aaa; }
-            .axon-sidebar button.active-cat { color: #44d62c; background-color: #0d1a0d;
+            /* ── Sidebar: background:#000; width:~48px (icons) or ~171px (expanded) ── */
+            .axon-sidebar { background-color: #000; border-right: 1px solid #1a1a1a; }
+            .axon-sidebar button { border-radius: 0; padding: 10px 12px; color: #909090; border: none;
+                                   background: transparent; font-size: 12px; font-weight: 600; }
+            .axon-sidebar button:hover { background-color: #1a1a1a; color: #fff; }
+            .axon-sidebar button.active-cat { color: #44d62c; background-color: transparent;
                                               border-left: 3px solid #44d62c; }
 
-            /* Cards */
-            .axon-card { background-color: transparent; }
-            .axon-card:hover { background-color: rgba(255,255,255,0.03); }
-            .axon-card-icon { color: #666; }
-            .axon-card-icon:hover { color: #44d62c; }
-            .axon-title { color: #ccc; font-weight: 600; font-size: 12px; }
-            .axon-author { color: #555; font-size: 10px; }
-            .axon-hover-overlay { background-color: rgba(0,0,0,0.5); border-radius: 4px; }
+            /* ── Wallpaper cards ── */
+            .axon-card { background-color: transparent; border-radius: 2px; }
+            .axon-card:hover { background-color: #222; }
+            .axon-card-icon { color: #fff; opacity: 0.75; }
+            .axon-card-icon:hover { opacity: 1; }
+            .axon-title { color: #eee; font-weight: 600; font-size: 14px; line-height: 20px; }
+            .axon-author { color: #909090; font-size: 12px; line-height: 16px; }
+            .axon-hover-overlay { background-color: rgba(0,0,0,0.6); border-radius: 2px; }
 
-            /* Buttons */
+            /* ── Artist cards: background:#222; min-height:184px; border:2px solid transparent ── */
+            .axon-artist-card { background-color: #222; border-radius: 2px; border: 2px solid transparent;
+                                min-height: 184px; padding: 8px 10px; transition: all 0.35s ease; }
+            .axon-artist-card:hover { border-color: #44d62c; background-color: #000; }
+            .axon-artist-desc { color: #909090; font-size: 12px; line-height: 16px; }
+            .axon-artist-card:hover .axon-artist-desc { color: #fff; }
+
+            /* ── Collection/Series info: background:#000; width:224px ── */
+            .axon-coll-info { background-color: #000; border-radius: 2px; padding: 8px 16px; }
+            .axon-coll-follow { color: #44d62c; font-size: 12px; line-height: 24px; }
+            .axon-coll-follow:hover { color: #7ce26b; }
+
+            /* ── Buttons ── */
             .axon-dl-btn { background-color: #44d62c; color: #000; font-weight: 700;
-                           border-radius: 4px; padding: 6px 16px; font-size: 11px; }
+                           border-radius: 2px; padding: 6px 16px; font-size: 12px; }
             .axon-dl-btn:hover { background-color: #55e73d; }
-            .axon-apply-btn { background-color: #1a5c12; color: #44d62c; font-weight: 700;
-                              border-radius: 4px; padding: 6px 16px; font-size: 11px; border: 1px solid #44d62c; }
-            .axon-apply-btn:hover { background-color: #2a6e1e; }
+            .axon-apply-btn { background-color: #135708; color: #44d62c; font-weight: 700;
+                              border-radius: 2px; padding: 6px 16px; font-size: 12px; border: 1px solid #226916; }
+            .axon-apply-btn:hover { background-color: #1a6e0e; }
 
-            /* Progress */
-            .axon-progress trough { background-color: #222; border-radius: 2px; min-height: 3px; }
+            /* ── Progress ── */
+            .axon-progress trough { background-color: #333; border-radius: 2px; min-height: 3px; }
             .axon-progress progress { background-color: #44d62c; border-radius: 2px; min-height: 3px; }
 
-            /* Status */
-            .axon-status { color: #444; font-size: 11px; }
-            .axon-loadmore { background-color: #1a1a1a; color: #888; border-radius: 4px;
-                             padding: 6px 20px; border: 1px solid #2a2a2a; font-size: 12px; }
-            .axon-loadmore:hover { background-color: #222; color: #ccc; border-color: #44d62c; }
+            /* ── Status & load more ── */
+            .axon-status { color: #555; font-size: 12px; }
+            .axon-loadmore { background-color: #222; color: #999; border-radius: 2px;
+                             padding: 8px 24px; border: 1px solid #333; font-size: 13px; }
+            .axon-loadmore:hover { background-color: #333; color: #fff; border-color: #44d62c; }
 
-            /* Scrollbar */
+            /* ── Go-to-top button ── */
+            .axon-go-top { background-color: #44d62c; border-radius: 0; min-width: 48px;
+                           min-height: 40px; opacity: 0.7; color: #000; }
+            .axon-go-top:hover { opacity: 1; }
+
+            /* ── Scrollbar ── */
             scrollbar { background-color: transparent; }
-            scrollbar slider { background-color: #2a2a2a; border-radius: 10px; min-width: 6px; min-height: 30px; }
+            scrollbar slider { background-color: #333; border-radius: 10px; min-width: 6px; min-height: 30px; }
             scrollbar slider:hover { background-color: #44d62c; }
         """)
         Gtk.StyleContext.add_provider_for_display(
@@ -1845,13 +1868,13 @@ class AxonApp(Adw.Application):
     def _build_author_card(self, artist):
         """Author card: avatar, name, bio."""
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        card.add_css_class("axon-card")
-        card.set_size_request(200, -1)
+        card.add_css_class("axon-artist-card")
+        card.set_size_request(320, 184)
 
         # Avatar
         avatar = Gtk.Picture()
         avatar.set_content_fit(Gtk.ContentFit.COVER)
-        avatar.set_size_request(200, 112)
+        avatar.set_size_request(300, 100)
         card.append(avatar)
 
         avatar_url = artist.get("avatar", "")
@@ -1872,9 +1895,12 @@ class AxonApp(Adw.Application):
         if bio:
             bio_label = Gtk.Label(label=bio[:80])
             bio_label.set_xalign(0)
-            bio_label.add_css_class("axon-author")
+            bio_label.add_css_class("axon-artist-desc")
             bio_label.set_ellipsize(3)
+            bio_label.set_wrap(True)
+            bio_label.set_lines(2)
             bio_label.set_margin_start(6)
+            bio_label.set_margin_end(6)
             bio_label.set_margin_bottom(6)
             card.append(bio_label)
 
