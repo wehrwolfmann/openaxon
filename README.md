@@ -13,28 +13,71 @@
 
 ## Зависимости
 
+### Обязательные
+
 - **Wine** (проверено с Wine 9.x / 10.x)
 - **Python 3.10+**
-- **PyGObject** с WebKit2 (`webkit2gtk-4.1`)
+- **PyGObject** с GTK4, libadwaita и WebKit2
 - **xdotool**, **xprop** (для фикса панели задач на X11)
 - **7z** или **unzip** (для расшифровки обоев)
+
+### Опциональные
+
+- **mpvpaper** — видео-обои на Wayland
+- **xwinwrap** + **mpv** — видео-обои на X11
+- **feh** — установка статичных обоев (fallback)
 
 ### Arch Linux / CachyOS
 
 ```bash
-sudo pacman -S wine python-gobject webkit2gtk-4.1 xdotool xorg-xprop p7zip
+sudo pacman -S wine python-gobject gtk4 libadwaita webkit2gtk-4.1 xdotool xorg-xprop p7zip
 ```
 
 ### Ubuntu / Debian
 
 ```bash
-sudo apt install wine python3-gi gir1.2-webkit2-4.1 xdotool x11-utils p7zip-full
+sudo apt install wine python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit2-4.1 xdotool x11-utils p7zip-full
 ```
 
 ### Fedora
 
 ```bash
-sudo dnf install wine python3-gobject webkit2gtk4.1 xdotool xprop p7zip
+sudo dnf install wine python3-gobject gtk4 libadwaita webkit2gtk4.1 xdotool xprop p7zip
+```
+
+### openSUSE
+
+```bash
+sudo zypper install wine python3-gobject gtk4 libadwaita webkit2gtk3-soup2-devel xdotool xprop p7zip
+```
+
+### Void Linux
+
+```bash
+sudo xbps-install wine python3-gobject gtk4 libadwaita webkit2gtk41 xdotool xprop p7zip
+```
+
+### Gentoo
+
+```bash
+sudo emerge app-emulation/wine dev-python/pygobject gui-libs/gtk:4 gui-libs/libadwaita net-libs/webkit-gtk x11-misc/xdotool x11-apps/xprop app-arch/p7zip
+```
+
+### NixOS
+
+```nix
+# configuration.nix или home-manager
+environment.systemPackages = with pkgs; [
+  wineWowPackages.stable
+  python3
+  python3Packages.pygobject3
+  gtk4
+  libadwaita
+  webkitgtk_4_1
+  xdotool
+  xorg.xprop
+  p7zip
+];
 ```
 
 ## Установка
