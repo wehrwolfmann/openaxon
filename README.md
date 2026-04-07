@@ -6,10 +6,11 @@
 
 | Файл | Описание |
 |------|----------|
-| `razer-login.py` | Авторизация в Razer ID без Razer Central |
+| `razer-login.py` | Авторизация в Razer ID |
+| `razer-token-inject.py` | Инжекция токена в Razer Central Service (для работы без патча DLL) |
 | `razer-axon.sh` | Скрипт запуска с Wine/WebView2 и фиксами панели задач |
 | `razer-axon-decrypt.py` | Извлечение зашифрованных видео-обоев |
-| `patch/RazerAxon.UserManager.dll` | Патченная DLL — заменяет авторизацию через Razer Central на самостоятельный вход |
+| `patch/RazerAxon.UserManager.dll` | Патченная DLL (устаревший метод, см. ниже) |
 
 ## Зависимости
 
@@ -94,44 +95,58 @@ wine /tmp/RazerAxonInstaller.exe
 
 Следуйте установщику. Путь по умолчанию: `C:\Program Files (x86)\Razer\Razer Axon`.
 
-### 2. Замена DLL UserManager
+### 2. Регистрация Razer Central Service
 
-Оригинальная `RazerAxon.UserManager.dll` требует Razer Central (Windows-сервис) для авторизации. Патченная версия заменяет это на самостоятельный вход, читая токены из локального JSON-файла.
+Razer Axon использует Razer Central Service для авторизации. Зарегистрируйте его как Wine-сервис (один раз):
 
 ```bash
-AXON_DIR="$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon"
-
-# Бэкап оригинала
-cp "$AXON_DIR/RazerAxon.UserManager.dll" "$AXON_DIR/RazerAxon.UserManager.dll.orig"
-
-# Применить патч
-cp patch/RazerAxon.UserManager.dll "$AXON_DIR/"
+wine sc create RazerCentralService \
+  binPath= "C:\Program Files (x86)\Razer\Razer Services\Razer Central\RazerCentralService.exe" \
+  start= auto
 ```
+
+Сервис будет запускаться автоматически при старте Wine.
 
 ### 3. Установка скриптов
 
 ```bash
-cp razer-axon.sh razer-login.py razer-axon-decrypt.py ~/.local/bin/
-chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-axon-decrypt.py
+cp razer-axon.sh razer-login.py razer-token-inject.py razer-axon-decrypt.py ~/.local/bin/
+chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-token-inject.py ~/.local/bin/razer-axon-decrypt.py
 ```
 
 ### 4. Вход в Razer ID
 
 ```bash
+# Получить токен
 razer-login.py
+
+# Инжектировать в Razer Central Service
+razer-token-inject.py
 ```
 
-Откроется окно WebKit со страницей входа Razer ID. После авторизации скрипт перехватывает JWT-токен и сохраняет его в `wine_login_token.json`, откуда его читает патченная DLL.
+`razer-login.py` открывает окно WebKit со страницей входа Razer ID. После авторизации скрипт перехватывает JWT-токен и сохраняет его.
 
-Вход проходит в два этапа:
-1. **Этап 1** — Открывает id.razer.com как обычный сайт для входа
-2. **Этап 2** — После обнаружения входа перезагружает страницу с «natasha bridge» shim для извлечения JWT-токена
+`razer-token-inject.py` передаёт токен в Razer Central Service через named pipe IPC. При первом запуске автоматически собирает .NET-хелпер (требуется `dotnet` SDK 6.0+).
 
 ### 5. Запуск Razer Axon
 
 ```bash
 razer-axon.sh
 ```
+
+> **Примечание:** Вы также можете войти напрямую через интерфейс Axon — нажмите «Вход» в окне приложения. Токен-инжектор нужен только если прямой вход не работает.
+
+### Альтернативный метод: патченная DLL (устаревший)
+
+Если метод с Razer Central Service не работает, можно заменить `RazerAxon.UserManager.dll` патченной версией:
+
+```bash
+AXON_DIR="$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon"
+cp "$AXON_DIR/RazerAxon.UserManager.dll" "$AXON_DIR/RazerAxon.UserManager.dll.orig"
+cp patch/RazerAxon.UserManager.dll "$AXON_DIR/"
+```
+
+Этот метод убирает зависимость от Razer Central, но требует повторного применения после каждого обновления Axon.
 
 ## Использование
 
@@ -140,9 +155,11 @@ razer-axon.sh
 ```bash
 razer-login.py            # Открыть окно входа
 razer-login.py --status   # Проверить статус текущего токена
+razer-token-inject.py     # Инжектировать токен в сервис
+razer-token-inject.py --status  # Проверить состояние
 ```
 
-Токены истекают примерно через 24 часа. Перезапустите `razer-login.py` для обновления.
+Токены истекают примерно через 24 часа. Обновите через `razer-login.py`, затем `razer-token-inject.py`.
 
 ### Запуск
 
@@ -206,40 +223,41 @@ HMAC-ключ захардкожен в .NET-сборках Razer Axon.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Razer Axon (Wine)                                   │
+│ Razer Axon (Wine) — оригинальные файлы, без патчей  │
 │                                                     │
 │  RazerAxon.exe                                      │
 │       │                                             │
-│       ├── RazerAxon.UserManager.dll (ПАТЧ)          │
-│       │       │                                     │
-│       │       ├── Читает wine_login_token.json      │
-│       │       └── Без зависимости от Razer Central  │
+│       ├── RazerAxon.UserManager.dll (ОРИГИНАЛ)      │
+│       │       └── NacClient ──► named pipe IPC      │
 │       │                                             │
 │       ├── WebView2 UI ──► axon-api.razer.com        │
 │       │                                             │
 │       └── WallpaperPlayerManager                    │
 │               └── Расшифровка ZIP → воспроизведение  │
 │                                                     │
+│  RazerCentralService.exe (Wine-сервис)              │
+│       ├── AccountManager ──► авторизация             │
+│       ├── Named pipe IPC ──► связь с Axon           │
+│       └── Razer API ──► manifest.razerapi.com       │
+│                                                     │
 ├─────────────────────────────────────────────────────┤
 │ Linux                                               │
 │                                                     │
 │  razer-login.py ──► id.razer.com ──► JWT-токен      │
+│  razer-token-inject.py ──► pipe IPC ──► сервис      │
 │  razer-axon.sh ──► Wine + фиксы окружения/панели    │
 │  razer-axon-decrypt.py ──► HMAC-SHA256 → unzip      │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
 
-### Подробности о патченной DLL
+### Как работает авторизация
 
-Оригинальная `RazerAxon.UserManager.dll` общается с Razer Central через именованные каналы (`NacClient`) для авторизации. Поскольку Razer Central не работает под Wine, патченная DLL:
+Razer Central Service (`RazerCentralService.exe`) запускается как Wine-сервис и слушает на named pipe `{FC828A97-C116-453D-BD88-AD471496E03C}`. Axon подключается к нему через `NacClient.dll` для получения токена авторизации.
 
-- Убирает все зависимости от Razer Central / AccountManager
-- Добавляет `RazerLoginForm` с WebView2 для прямого входа в Razer ID
-- Хранит/загружает токены из `wine_login_token.json` в AppData
-- Предоставляет тот же интерфейс `IUserManager` остальной части Razer Axon
+`razer-token-inject.py` подключается к тому же pipe и отправляет команду `WebApp_SetLoginSuccessFromWeb` с JWT-токеном, полученным через `razer-login.py`. Это эмулирует веб-авторизацию через Razer Central GUI (который не отображается под Wine из-за ограничений WPF-рендеринга).
 
-Исходник скомпилирован из `/tmp/razer_usershim/` под `net6.0-windows`.
+Все файлы Razer остаются оригинальными — никаких патчей бинарников.
 
 ### Формат токена
 
@@ -268,17 +286,32 @@ password = HMAC-SHA256("j6l-aUmhCc@tN%T_", ResourceConfig.txt).hexdigest()
 
 ## Решение проблем
 
-### Axon показывает пустое/белое окно
-Убедитесь, что WebView2 runtime установлен в Wine:
+### Axon показывает чёрное/пустое окно
+Токен не инжектирован или истёк:
 ```bash
-# Установщик Axon должен сделать это автоматически, но если нет:
-winetricks -q webview2
+razer-login.py            # Обновить токен
+razer-token-inject.py     # Инжектировать
+```
+
+### Razer Central Service не запускается
+```bash
+# Проверить статус
+wine sc query RazerCentralService
+
+# Перезапустить Wine (сервис стартует автоматически)
+wineboot
+```
+
+### Кириллица в трее отображается квадратиками
+```bash
+wine reg add "HKCU\Software\Wine\Fonts\Replacements" /v "Segoe UI" /t REG_SZ /d "Tahoma" /f
 ```
 
 ### Токен истёк
 ```bash
 razer-login.py --status   # Проверить
 razer-login.py            # Обновить
+razer-token-inject.py     # Инжектировать заново
 ```
 
 ### Окно не видно в панели задач
