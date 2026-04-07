@@ -22,9 +22,21 @@ from gi.repository import GLib, Gtk, WebKit2
 
 RAZER_ID_URL = "https://id.razer.com/"
 
-WINEPREFIX = Path(os.environ.get("WINEPREFIX", Path.home() / ".wine"))
-TOKEN_DIR = WINEPREFIX / "drive_c/users" / os.environ["USER"] / "AppData/Local/Razer/RazerAxon"
-TOKEN_FILE = TOKEN_DIR / "wine_login_token.json"
+CONFIG_DIR = Path(os.environ.get("RAZER_AXON_DIR", Path.home() / ".config/razer-axon"))
+TOKEN_FILE = CONFIG_DIR / "token.json"
+
+# Backward compat: migrate from Wine prefix path
+_WINE_TOKEN = (Path(os.environ.get("WINEPREFIX", Path.home() / ".wine"))
+               / "drive_c/users" / os.environ.get("USER", "user")
+               / "AppData/Local/Razer/RazerAxon/wine_login_token.json")
+if not TOKEN_FILE.exists() and _WINE_TOKEN.exists():
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    import shutil
+    shutil.copy2(_WINE_TOKEN, TOKEN_FILE)
+    print(f"Migrated token from {_WINE_TOKEN}")
+
+# Also keep Wine prefix in sync for Axon-under-Wine users
+TOKEN_DIR = CONFIG_DIR
 
 # Phase 1: Check if user is logged in (poll localStorage)
 CHECK_LOGIN_JS = """
@@ -109,8 +121,12 @@ def save_token(token_data: dict) -> None:
             exp_dt = datetime.now(tz=timezone.utc) + timedelta(hours=24)
             token_record["tokenExpiry"] = exp_dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-    TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     TOKEN_FILE.write_text(json.dumps(token_record, indent=2), encoding="utf-8")
+
+    # Keep Wine prefix copy in sync for Axon-under-Wine users
+    if _WINE_TOKEN.parent.exists() and _WINE_TOKEN != TOKEN_FILE:
+        _WINE_TOKEN.write_text(json.dumps(token_record, indent=2), encoding="utf-8")
 
     print(f"\nToken saved to {TOKEN_FILE}")
     print(f"  UUID:    {token_record['uuid']}")
@@ -142,6 +158,126 @@ def show_current_token() -> None:
     else:
         print("No existing token found.")
     print()
+
+
+def token_needs_refresh() -> bool:
+    """Check if the current token is expired or expiring within 1 hour."""
+    if not TOKEN_FILE.exists():
+        return True
+    try:
+        data = json.loads(TOKEN_FILE.read_text(encoding="utf-8"))
+        expiry = data.get("tokenExpiry", "")
+        if not expiry:
+            return True
+        exp_dt = datetime.fromisoformat(expiry.replace("Z", "+00:00"))
+        return datetime.now(tz=timezone.utc) + timedelta(hours=1) >= exp_dt
+    except Exception:
+        return True
+
+
+class SilentRefresh:
+    """Try to get a new JWT silently using saved WebKit cookies.
+
+    If the Razer ID session is still alive, we can get a new token
+    without showing a login window. If it fails, returns False.
+    """
+
+    def __init__(self, timeout: int = 15):
+        self._timeout = timeout
+        self._got_token = False
+        self._user_id = ""
+        self._token_data = {}
+
+    def try_refresh(self) -> bool:
+        ctx = WebKit2.WebContext.get_default()
+
+        self.webview = WebKit2.WebView.new_with_context(ctx)
+        self.content_manager = self.webview.get_user_content_manager()
+
+        # Register message handler
+        self.content_manager.register_script_message_handler("razerLogin")
+        self.content_manager.connect("script-message-received::razerLogin",
+                                     self._on_token)
+
+        # Inject natasha bridge from the start
+        script = WebKit2.UserScript(
+            NATASHA_BRIDGE_JS,
+            WebKit2.UserContentInjectedFrames.ALL_FRAMES,
+            WebKit2.UserScriptInjectionTime.START,
+            None, None,
+        )
+        self.content_manager.add_script(script)
+
+        self.webview.connect("load-changed", self._on_load)
+
+        # Persistent cookies (same DB as interactive login)
+        cookie_mgr = ctx.get_cookie_manager()
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        cookie_mgr.set_persistent_storage(
+            str(CONFIG_DIR / "webkit_cookies.db"),
+            WebKit2.CookiePersistentStorage.SQLITE)
+
+        settings = self.webview.get_settings()
+        settings.set_property("enable-javascript", True)
+
+        # Timeout
+        GLib.timeout_add_seconds(self._timeout, self._on_timeout)
+
+        # Load — if session cookies are valid, SPA will auto-login
+        self.webview.load_uri(RAZER_ID_URL)
+
+        # Run hidden (no window)
+        self._loop = GLib.MainLoop()
+        self._loop.run()
+
+        return self._got_token
+
+    def _on_load(self, webview, event):
+        if event == WebKit2.LoadEvent.FINISHED and not self._got_token:
+            # Poll for login state
+            GLib.timeout_add(2000, self._poll)
+
+    def _poll(self):
+        if self._got_token:
+            return False
+        self.webview.evaluate_javascript(
+            CHECK_LOGIN_JS, -1, None, None, None,
+            self._on_poll_result, None)
+        return False
+
+    def _on_poll_result(self, webview, result, user_data):
+        if self._got_token:
+            return
+        try:
+            js_value = webview.evaluate_javascript_finish(result)
+            user_id = js_value.to_string().strip()
+            if user_id and user_id != "null" and user_id.startswith("RZR_"):
+                self._user_id = user_id
+                # Session is alive — just wait for bridge to fire
+                return
+        except Exception:
+            pass
+        # No login yet — retry a few times
+        GLib.timeout_add(2000, self._poll)
+
+    def _on_token(self, content_manager, js_result):
+        if self._got_token:
+            return
+        self._got_token = True
+        data_str = js_result.get_js_value().to_string()
+        try:
+            self._token_data = json.loads(data_str)
+            if not self._token_data.get("uuid"):
+                self._token_data["uuid"] = self._user_id
+            save_token(self._token_data)
+        except json.JSONDecodeError:
+            self._got_token = False
+        self._loop.quit()
+
+    def _on_timeout(self):
+        if not self._got_token:
+            self._loop.quit()
+        return False
 
 
 class RazerLoginWindow(Gtk.Window):
@@ -177,9 +313,9 @@ class RazerLoginWindow(Gtk.Window):
 
         # Persistent cookies
         cookie_mgr = ctx.get_cookie_manager()
-        TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         cookie_mgr.set_persistent_storage(
-            str(TOKEN_DIR / "webkit_cookies.db"),
+            str(CONFIG_DIR / "webkit_cookies.db"),
             WebKit2.CookiePersistentStorage.SQLITE)
 
         # Phase 1: load without bridge
@@ -336,15 +472,30 @@ class RazerLoginWindow(Gtk.Window):
 
 def main():
     if "--help" in sys.argv or "-h" in sys.argv:
-        print("Usage: razer-login.py [--status]")
+        print("Usage: razer-login.py [--status] [--refresh]")
         print()
         print("Opens Razer ID login page. After login, saves token for Razer Axon.")
-        print("  --status  Show current token status and exit")
+        print("  --status   Show current token status and exit")
+        print("  --refresh  Silently refresh token using saved session (no window)")
         return
 
     show_current_token()
 
     if "--status" in sys.argv:
+        return
+
+    if "--refresh" in sys.argv:
+        if not token_needs_refresh():
+            print("Token is still valid, no refresh needed.")
+            return
+        print("Attempting silent token refresh...")
+        refresher = SilentRefresh(timeout=15)
+        if refresher.try_refresh():
+            print("Token refreshed successfully!")
+        else:
+            print("Silent refresh failed — session expired.")
+            print("Run razer-login.py (without --refresh) to log in interactively.")
+            sys.exit(1)
         return
 
     print(f"Opening {RAZER_ID_URL} ...")
