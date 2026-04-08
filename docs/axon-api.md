@@ -159,20 +159,65 @@ Get detailed info about a single wallpaper.
 
 ### 3. Wallpaper - Download
 
+> Reverse-engineered from `RazerAxon.DownloadManager.dll` and `RazerAxon.CommonUtility.dll`.
+
+#### HMAC Auth Implementation (from decompiled source)
+
+```python
+import hmac, hashlib, urllib.parse
+
+def create_hmac_request(method, url, uuid, is_guest, params, user_token=""):
+    # 1. Sort params alphabetically by key (Ordinal)
+    sorted_params = sorted(params.items(), key=lambda x: x[0])
+
+    # 2. Build raw query (NOT url-encoded) for HMAC signature
+    raw_query = "&".join(f"{k}={v}" for k, v in sorted_params)
+
+    # 3. HMAC-SHA256 signature
+    sig = hmac.new(b"j6l-aUmhCc@tN%T_", raw_query.encode(), hashlib.sha256).hexdigest()
+
+    # 4. Build url-encoded query for actual request
+    encoded_query = "&".join(f"{k}={urllib.parse.quote(str(v), safe='')}" for k, v in sorted_params)
+
+    # 5. Headers
+    headers = {
+        "UserID": uuid,
+        "Authorization": sig,
+        "Isguest": "true" if is_guest else "false",
+        "Token": user_token or "",
+        "accept": "text/json, application/json",
+    }
+
+    # 6. GET: params in URL; POST: params in body as x-www-form-urlencoded
+    if method == "GET":
+        final_url = f"{url}?{encoded_query}"
+        body = None
+    else:
+        final_url = url
+        body = encoded_query  # Content-Type: application/x-www-form-urlencoded
+
+    return final_url, headers, body
+```
+
 #### GET /wallpaper/resource
 Get download URL for a wallpaper at a specific resolution.
 
 | Param | Type | Description |
 |-------|------|-------------|
 | `wallpaper_id` | string | Wallpaper ID |
-| `width` | string | Width in pixels |
-| `height` | string | Height in pixels |
-| `resource_type` | string | `"0"` |
+| `width` | int | Width in pixels |
+| `height` | int | Height in pixels |
+| `resource_type` | int | `0` (standard) |
 
 | Field | Value |
 |-------|-------|
 | Auth | **HMAC** |
-| Response | `{resource (download URL), resource_id, resource_sign (MD5), headers, cookies}` |
+| Response | `{resource, resource_id, resource_sign, headers, cookies}` |
+
+Response `headers` and `cookies` are passed to the download HTTP client:
+- `cookies`: dict of cookie name → value, added to CookieContainer
+- `headers`: dict of header name → value, added to request
+- `resource_sign`: MD5 hash for integrity verification after download
 
 #### POST /wallpaper/downloaded
 Report a completed download to the API.
@@ -185,7 +230,60 @@ Report a completed download to the API.
 | Field | Value |
 |-------|-------|
 | Auth | **HMAC** |
-| Body encoding | `application/x-www-form-urlencoded` |
+| Body | `application/x-www-form-urlencoded` |
+
+#### POST /generate/downloaded
+Report a completed download of AI-generated wallpaper.
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `detail_id` | string | Generation detail ID |
+
+| Field | Value |
+|-------|-------|
+| Auth | **HMAC** |
+
+#### Download Flow (from DownloadManager.dll)
+
+```
+1. AddDownloadTask(item)  →  queue download
+2. GetDownloadInfo(wallpaper_id, width, height, resource_type)
+   → GET /wallpaper/resource (HMAC auth)
+   → returns: {resource: "https://cdn.../file.zip", resource_id, headers, cookies}
+3. SegmentTask.DownloadAsync()
+   → HTTP GET resource URL (with cookies + headers from step 2)
+   → supports resume via Range header (BytesTransferred tracking)
+   → saves to: ~/RazerAxonWallpapers/{wallpaper_id}/{width}x{height}.zip
+4. MD5 verification (resource_sign vs downloaded file)
+5. SetDownloadComplete(resource_id, wallpaper_id)
+   → POST /wallpaper/downloaded (HMAC auth)
+6. Extract ZIP → Extracted/ subfolder
+7. If SourceEncryptedTypes == ZIP: decrypt inner archive
+8. Apply wallpaper or add to playlist
+```
+
+#### DownloadItem Model
+
+```json
+{
+  "WallpaperId": "12345",
+  "Width": 1920,
+  "Height": 1080,
+  "DownloadStatus": "Downloading",
+  "SavePath": "~/RazerAxonWallpapers/12345/1920x1080.zip",
+  "Progress": 0.75,
+  "WebWallpaperItemSource": "",
+  "ApplyWhenEnd": true,
+  "AddToPlayListWhenEnd": false,
+  "SoureType": 0,
+  "PlayListIdsToAdd": []
+}
+```
+
+#### DownloadStatus Enum
+```
+Pending = 0, Downloading = 1, Paused = 2, Error = 3, Default = 4
+```
 
 ---
 
