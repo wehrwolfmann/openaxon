@@ -155,7 +155,7 @@ def build_injector():
         (build_dir / "inject.csproj").write_text("""<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
@@ -174,7 +174,7 @@ def build_injector():
             print(f"Build failed:\n{result.stderr}")
             return False
 
-        exe = build_dir / "bin/Release/net6.0-windows/win-x64/publish/inject.exe"
+        exe = build_dir / "bin/Release/net10.0-windows/win-x64/publish/inject.exe"
         if not exe.exists():
             print("Build produced no output")
             return False
