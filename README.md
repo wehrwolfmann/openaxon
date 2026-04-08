@@ -1,16 +1,37 @@
 # OpenAxon — Razer Axon на Linux
 
-Запуск [Razer Axon](https://www.razer.com/software/axon) на Linux через Wine — с поддержкой авторизации, фиксами панели задач и расшифровкой обоев.
+Запуск [Razer Axon](https://www.razer.com/software/axon) на Linux через Wine — с поддержкой авторизации, фиксами панели задач и расшифровкой обоев. Включает нативный GTK4 клиент и полную документацию по реверс-инжинирингу протоколов Razer Axon.
 
 ## Что входит в комплект
+
+### Скрипты
 
 | Файл | Описание |
 |------|----------|
 | `razer-login.py` | Авторизация в Razer ID |
-| `razer-token-inject.py` | Инжекция токена в Razer Central Service (для работы без патча DLL) |
-| `razer-axon.sh` | Скрипт запуска с Wine/WebView2 и фиксами панели задач |
+| `razer-token-inject.py` | Инжекция токена в Razer Central Service (работа без патча DLL) |
+| `razer-axon-gui.py` | Нативный GTK4/Adwaita клиент для Linux |
+| `openaxon-player.py` | Нативный wallpaper daemon (видео/статика, мультимонитор, эффекты) |
+| `razer-axon.sh` | Скрипт запуска оригинального Axon через Wine |
 | `razer-axon-decrypt.py` | Извлечение зашифрованных видео-обоев |
+| `razer-sync.py` | Синхронизация обоев с аккаунтом Razer |
 | `patch/RazerAxon.UserManager.dll` | Патченная DLL (устаревший метод, см. ниже) |
+
+### Документация реверс-инжиниринга
+
+Полная документация протоколов Razer Axon, извлечённая из 27 .NET DLL и JS-бандлов:
+
+| Документ | Описание |
+|----------|----------|
+| [`docs/razer-central-ipc.md`](docs/razer-central-ipc.md) | IPC протокол Razer Central — 4 сервиса, 137+ команд, wire format |
+| [`docs/axon-api.md`](docs/axon-api.md) | REST API — ~110 endpoints, HMAC-авторизация, менеджер загрузок |
+| [`docs/react-architecture.md`](docs/react-architecture.md) | React 18 frontend — 24 маршрута, state management, WebView2 мост |
+| [`docs/wallpaper-player.md`](docs/wallpaper-player.md) | Player pipe протокол — JSON команды, эффекты, мультимонитор |
+| [`docs/chroma-sdk.md`](docs/chroma-sdk.md) | Chroma RGB — REST API, .chroma формат, AI-генерация, LED maps |
+| [`docs/design-system.md`](docs/design-system.md) | CSS дизайн-система — цвета, шрифты, 13 групп компонентов |
+| [`docs/webview-host-objects.md`](docs/webview-host-objects.md) | JS↔C# мост — 6 host objects, 111 методов |
+| [`docs/utilities.md`](docs/utilities.md) | Logger, Environment, Notifications, Telemetry |
+| [`docs/reporter-screensaver.md`](docs/reporter-screensaver.md) | Analytics reporter и screensaver launcher |
 
 ## Зависимости
 
