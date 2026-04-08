@@ -234,12 +234,37 @@ def detect_session() -> str:
 
 
 def apply_wallpaper(path: str, is_video: bool = False) -> bool:
-    """Apply wallpaper to the desktop. Supports KDE Plasma, GNOME, and video wallpapers."""
+    """Apply wallpaper via openaxon-player daemon. Falls back to direct apply."""
+    import socket as _socket
+
+    sock_path = CONFIG_DIR / "player.sock"
+    media_type = "Video" if is_video else "Image"
+
+    # Try daemon first
+    try:
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.connect(str(sock_path))
+        cmd = json.dumps({"Command": "Play", "Type": media_type,
+                          "Source": str(Path(path).resolve())}) + "\n"
+        sock.sendall(cmd.encode())
+        resp = sock.recv(4096).decode().strip()
+        sock.close()
+        result = json.loads(resp) if resp else {}
+        if result.get("ok"):
+            return True
+    except (ConnectionRefusedError, FileNotFoundError, OSError):
+        pass  # daemon not running, fall through to direct apply
+
+    # Direct fallback (no daemon)
+    return _apply_wallpaper_direct(path, is_video)
+
+
+def _apply_wallpaper_direct(path: str, is_video: bool = False) -> bool:
+    """Direct wallpaper apply without daemon. Supports KDE, GNOME, Wayland, X11."""
     de = detect_de()
     session = detect_session()
 
     if is_video:
-        # Video wallpaper via mpvpaper (Wayland) or xwinwrap+mpv (X11)
         if session == "wayland":
             if shutil.which("mpvpaper"):
                 subprocess.Popen(
@@ -249,18 +274,18 @@ def apply_wallpaper(path: str, is_video: bool = False) -> bool:
         else:
             if shutil.which("xwinwrap") and shutil.which("mpv"):
                 subprocess.Popen(
-                    ["xwinwrap", "-g", "1920x1080+0+0", "-ov", "-ni", "-s", "-nf", "-b", "-un", "-argb", "--",
-                     "mpv", "--wid", "WID", "--no-audio", "--loop", "--no-osc", "--no-input-default-bindings", path],
+                    ["xwinwrap", "-g", "1920x1080+0+0", "-ov", "-ni", "-s",
+                     "-nf", "-b", "-un", "-argb", "--",
+                     "mpv", "--wid", "WID", "--no-audio", "--loop",
+                     "--no-osc", "--no-input-default-bindings", path],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 return True
         return False
 
-    # Static wallpaper
     if de == "kde":
         if shutil.which("plasma-apply-wallpaperimage"):
             r = subprocess.run(["plasma-apply-wallpaperimage", path], capture_output=True)
             return r.returncode == 0
-        # Fallback: qdbus
         if shutil.which("qdbus"):
             script = f'''
                 var a = desktops();
@@ -277,15 +302,17 @@ def apply_wallpaper(path: str, is_video: bool = False) -> bool:
             return r.returncode == 0
     elif de == "gnome":
         uri = f"file://{path}"
-        subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri], capture_output=True)
-        subprocess.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri], capture_output=True)
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.background",
+                       "picture-uri", uri], capture_output=True)
+        subprocess.run(["gsettings", "set", "org.gnome.desktop.background",
+                       "picture-uri-dark", uri], capture_output=True)
         return True
     elif de == "xfce":
         subprocess.run(["xfconf-query", "-c", "xfce4-desktop", "-p",
-                        "/backdrop/screen0/monitor0/workspace0/last-image", "-s", path], capture_output=True)
+                       "/backdrop/screen0/monitor0/workspace0/last-image",
+                       "-s", path], capture_output=True)
         return True
 
-    # Generic fallback
     if shutil.which("feh"):
         subprocess.run(["feh", "--bg-fill", path], capture_output=True)
         return True
