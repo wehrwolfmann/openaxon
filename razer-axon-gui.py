@@ -1176,8 +1176,9 @@ class AxonApp(Adw.Application):
         # ── Razer Axon CSS — pixel-matched from original Sequoia 2.6.2.0 ──
         css = Gtk.CssProvider()
         css.load_from_string("""
-            /* ── Base — body:#1a1a1a, font:14px roboto_regular ── */
-            window, .axon-main { background-color: #1a1a1a; color: #fff; font-size: 14px; }
+            /* ── Base — body:#1a1a1a, font:14px Roboto/RazerF5 ── */
+            window, .axon-main { background-color: #1a1a1a; color: #fff;
+                                 font-family: "Roboto", "RazerF5", sans-serif; font-size: 14px; }
 
             /* ── Title bar — 32px #222, logo margin-left:28px ── */
             .axon-titlebar { background-color: #222; min-height: 32px; }
@@ -1187,12 +1188,13 @@ class AxonApp(Adw.Application):
             .axon-titlebar button:hover { opacity: 1; }
             .axon-titlebar button.close:hover { background-color: #f53333; }
 
-            /* ── Nav bar — 48px #44d62c, font:21px razerf5 ── */
+            /* ── Nav bar — 48px #44d62c, font:21px RazerF5 ── */
             .axon-topbar { background-color: #44d62c; padding: 0; min-height: 48px; }
-            .axon-topbar-logo { color: #000; font-weight: 800; font-size: 16px;
-                                padding: 0 16px; margin-left: 12px; }
+            .axon-topbar-logo { color: #000; font-family: "RazerF5"; font-weight: 800;
+                                font-size: 16px; padding: 0 16px; margin-left: 12px; }
             .axon-topbar button { color: #107100; background: transparent; border: none;
-                                  font-weight: 700; font-size: 21px; padding: 0 20px;
+                                  font-family: "RazerF5"; font-weight: 500;
+                                  font-size: 21px; padding: 0 20px;
                                   min-height: 48px; border-radius: 0; }
             .axon-topbar button:hover { color: #000; background-color: rgba(0,0,0,0.1); }
             .axon-topbar-active { color: #000; font-weight: 800; }
@@ -1254,10 +1256,12 @@ class AxonApp(Adw.Application):
             .axon-card-icon { color: #fff; opacity: 0.75; }
             .axon-card-icon:hover { opacity: 1; background-color: rgba(0,0,0,0.3); }
 
-            /* ── Card text — title:#c8c8c8 14px, author:#909090 12px ── */
-            .axon-title { color: #c8c8c8; font-weight: 600; font-size: 14px; line-height: 16px; }
+            /* ── Card text — title:#c8c8c8 14px Roboto, author:#909090 12px ── */
+            .axon-title { color: #c8c8c8; font-family: "Roboto"; font-weight: 600;
+                          font-size: 14px; line-height: 16px; }
             .axon-card:hover .axon-title { color: #fff; }
-            .axon-author { color: #909090; font-size: 12px; line-height: 14px; }
+            .axon-author { color: #909090; font-family: "Roboto Medium", "Roboto";
+                           font-size: 12px; line-height: 14px; }
 
             /* ── Card hover overlay with download button ── */
             .axon-hover-overlay { background-color: rgba(0,0,0,0.6); border-radius: 2px; }
