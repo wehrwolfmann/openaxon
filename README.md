@@ -193,6 +193,85 @@ razer-axon.sh             # Запустить Razer Axon
 - Если Axon уже запущен, активирует существующее окно
 - Реактивно исправляет видимость в панели задач (Wine устанавливает `WM_TRANSIENT_FOR`, что скрывает окно из панели задач — скрипт отслеживает это и удаляет атрибут)
 
+### WebView2: стабильность под Wine
+
+UI Razer Axon рендерится встроенным **WebView2** (msedgewebview2 / Chromium).
+Под Wine **GPU/Viz-процесс** Chromium падает на `CHECK()`/`__debugbreak()` при
+GPU-init (exit code `0x80000003` = `STATUS_BREAKPOINT`) и циклически
+перезапускается; исчерпав GPU-crash-лимит (~3-6 крашей подряд), browser-процесс
+**сознательно выходит** → Axon видит `CoreWebView2ProcessFailed` / причина
+`BrowserProcessExited` и закрывает окно UI. Главный процесс Axon при этом
+выживает. **Это НЕ Mojo IPC и НЕ авторизация** (прежняя гипотеза опровергнута,
+см. ниже).
+
+**Фикс (главный рычаг) — Windows 7 для рендерера, чтобы обойти DirectComposition:**
+`razer-axon.sh` и `install-axon-linux.sh` идемпотентно ставят в реестр префикса:
+- `Version=win7` для `msedgewebview2.exe` в `HKCU\Software\Wine\AppDefaults` —
+  **главное**. При Windows-версии ≥8.1 viz Chromium презентует кадр (даже
+  software-bitmap) через **DirectComposition** (`DCompositionCreateDevice`),
+  которого Wine не реализует (`E_NOTIMPL`/`0x80004001`) → CHECK → краш viz → кадр
+  не доходит до окна = **чёрный экран**. Под `win7` тот же `SoftwareOutputDevice`
+  идёт через **GDI BitBlt** (без DComp) и реально копирует пиксели в окно;
+- `HardwareAccelerationModeEnabled=0` в `HKLM/HKCU\Software\Policies\Microsoft\Edge`
+  и `...\Edge\WebView2` — вспомогательное (Edge не поднимает HW-GPU-процесс).
+
+> **Важно — два РАЗНЫХ рычага версии Windows:**
+> - `win7` ставится **ТОЛЬКО** подпроцессу-рендереру `msedgewebview2.exe`;
+> - `RazerAxon.exe` и **глобально префикс остаются `win10`** — иначе сервер Razer
+>   отдаёт пустой каталог (логин/контент не работают). См. `set_win10` в установщике.
+>
+> Источники фикса: WineHQ Bug 58921, winetricks #2226, CodeWeavers, Arch Forums.
+
+Доп. смягчения, которые применяет `razer-axon.sh`:
+
+1. **Evergreen-рантайм (по умолчанию).** Axon рендерит home через встроенный
+   evergreen WebView2 (Chromium **149**) — единственная конфигурация, где
+   `CreateCoreWebView2Environment` под Wine инициализируется. Fixed-version
+   (`INSTALL_WV2_FIXED=1`) **не рекомендуется** (см. ниже).
+2. **Software-only рендер.** `LIBGL_ALWAYS_SOFTWARE=1`, `GALLIUM_DRIVER=llvmpipe`,
+   Mesa-EGL — убирают шум NVIDIA EGL под XWayland.
+3. **Chromium-флаги** (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`):
+   `--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer
+   --disable-gpu-sandbox --disable-features=RendererCodeIntegrity
+   --disable-crash-reporter --disable-renderer-backgrounding
+   --disable-background-timer-throttling`.
+
+> **Статус (2026-06-12):** проверено живьём на Wine 11.10 + RTX 4070 (Wayland).
+> Корень переустановлен по stderr Chromium (`gpu_process_host.cc:1063 GPU process
+> exited unexpectedly: exit_code=-2147483645` = `0x80000003`, «has crashed N
+> time(s)»). В одном baseline-прогоне зафиксировано **12 спавнов gpu-process**.
+>
+> **До фикса (baseline):** GPU-процесс крашит ~6 раз → `BrowserProcessExited`
+> через ~10-17 с, цикл ~38 раз за 200 с (UI мерцает).
+>
+> **После фикса (`win7` для msedgewebview2.exe + win10 для приложения):**
+> UI Axon **реально рисуется** — подтверждено визуально (главная с каруселью
+> баннеров/TRENDING и экран Razer ID Login отрисованы полностью, 2026-06-18).
+> Чёрный экран устранён: viz больше не зовёт `DCompositionCreateDevice`,
+> презентация идёт через GDI BitBlt. Флаг `--disable-gpu-process-crash-limit`
+> при `win7` становится по сути избыточным (краш-цикл DComp устранён в корне),
+> но оставлен как страховка.
+>
+> _Предыстория: ранее реестр ошибочно ставил `win81` (= порог включения DComp) —
+> это убирало `BrowserProcessExited` (белый экран), но viz зацикливался на
+> DComp-краше и не выдавал кадры → **чёрный** экран. Замена на `win7` — настоящее
+> решение._
+>
+> **WineHQ #56378 — НЕ про named-pipe/Mojo** (research, обход Anubis): это баг
+> Chromium-sandbox bring-up, закрыт FIXED в Wine **11.1**; парный #56377 (freeze)
+> — FIXED в 10.5. Все их фиксы (winstation/desktop/token, `DeriveCapabilitySidsFromName`,
+> `SetAdditionalForegroundBoostProcesses`) **уже присутствуют в системном Wine 11.10**.
+> Chromium Mojo использует named pipes в BYTE-mode (Wine давно держит); с Chrome
+> ~112 Mojo ушёл в shared memory (ipcz). → **Патч Wine по named-pipe не требуется
+> и не помог бы; пропатченный Wine НЕ собирался** (отменено по результату research).
+>
+> Что НЕ помогло ранее (проверено живьём): `--single-process` (крашит быстрее),
+> `--no-zygote`, отключение `werfault.exe`, Xvfb без NVIDIA-EGL (EGL не корень),
+> `--disable-watchdog/--disable-hang-monitor`, fixed-version рантайм 109/133
+> (версия стабильности не даёт). Чтобы убрать оставшийся 1× ранний краш:
+> `--disable-gpu-watchdog` + повышение GPU-crash-лимита, Wine-Staging ≥11.6
+> (DirectComposition патчсет), либо вынос WebView2 во внешний хост (CDP-proxy).
+
 ### Расшифровка обоев
 
 Razer Axon хранит скачанные обои как ZipCrypto-зашифрованные ZIP-архивы, замаскированные под `.mp4`.
