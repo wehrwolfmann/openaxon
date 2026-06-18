@@ -1,0 +1,13 @@
+[Unit]
+Description=Refresh Razer Axon JWT token silently (keeps the session alive)
+Documentation=https://github.com/wehrwolfmann/openaxon
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+# Тихий refresh по session-cookie + синк токена в Wine-префикс. Путь скрипта
+# подставьте под свою установку (по умолчанию — клон репозитория).
+ExecStart=%h/Projects/openaxon/razer-token-refresh.sh
+# WebKit для silent-refresh нужен доступ к графической сессии — таймер тянет env
+# через `systemctl --user import-environment` (см. README/установку).
