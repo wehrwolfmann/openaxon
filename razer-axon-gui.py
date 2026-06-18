@@ -68,6 +68,45 @@ STRINGS = {
         "uninstalling": "Uninstalling Razer Axon...",
         "connecting": "Connecting...", "extracting": "Extracting...", "applying": "Applying...",
         "artist_prefix": "Artist",
+        # ── AI generation (createAI) ──
+        "ai_title": "Generate with AI",
+        "ai_mode": "Mode", "ai_mode_t2i": "Text → Image", "ai_mode_i2i": "Image → Image",
+        "ai_mode_t2v": "Text → Video", "ai_mode_i2v": "Image → Video",
+        "ai_mode_motion": "Image → Motion", "ai_mode_upscale": "Upscale",
+        "ai_prompt": "Prompt", "ai_prompt_ph": "Describe the wallpaper you want...",
+        "ai_negative": "Negative prompt", "ai_negative_ph": "What to avoid (optional)...",
+        "ai_model": "Model", "ai_ratio": "Aspect ratio", "ai_strength": "Strength",
+        "ai_generate": "Generate", "ai_generating": "Generating...",
+        "ai_tokens": "Tokens", "ai_cost": "Cost", "ai_balance_unknown": "—",
+        "ai_no_prompt": "Enter a prompt first.",
+        "ai_submit_failed": "Generation request failed.",
+        "ai_filtering": "Moderating (NSFW filter)...",
+        "ai_done": "Generation complete.",
+        "ai_failed": "Generation failed.",
+        "ai_nsfw_flagged": "Result flagged by content filter.",
+        "ai_results": "Results", "ai_save": "Save", "ai_saved": "Saved to library",
+        "ai_login_needed": "Sign in required for AI generation.\nRun razer-login to authenticate.",
+        "ai_publish": "Publish", "ai_upscale": "Upscale", "ai_again": "Again",
+        "ai_advanced": "Advanced",
+        # ── AI image source (image2*) ──
+        "ai_source": "Source image", "ai_pick_image": "Choose image…",
+        "ai_uploading": "Uploading source…", "ai_upload_failed": "Image upload failed.",
+        "ai_no_source": "Choose a source image first.", "ai_source_ready": "Source ready",
+        # ── New top-nav tabs ──
+        "home": "HOME", "profile": "PROFILE", "collections": "COLLECTIONS",
+        # ── Home / Spotlight ──
+        "home_featured": "Featured", "home_selections": "Selections",
+        "home_empty": "Nothing featured right now.",
+        # ── Profile / Wallet ──
+        "profile_tokens": "AI Tokens", "profile_silver": "Silver",
+        "profile_balance": "Balance", "profile_badges": "Badges",
+        "profile_topup": "Top up in the official Razer Axon app.",
+        "profile_no_login": "Sign in to view your profile.\nRun razer-login to authenticate.",
+        "profile_country": "Country", "profile_userid": "User ID",
+        # ── Collections ──
+        "coll_follow": "FOLLOW", "coll_following": "FOLLOWING",
+        "coll_empty": "No collections.", "coll_followed": "Followed",
+        "follow_ok": "Following", "unfollow_ok": "Unfollowed", "follow_failed": "Action failed",
     },
     "ru": {
         "gallery": "ГАЛЕРЕЯ", "create": "СОЗДАТЬ", "community": "СООБЩЕСТВО", "library": "БИБЛИОТЕКА",
@@ -88,6 +127,45 @@ STRINGS = {
         "uninstalling": "Удаление Razer Axon...",
         "connecting": "Подключение...", "extracting": "Извлечение...", "applying": "Применение...",
         "artist_prefix": "Автор",
+        # ── AI-генерация (createAI) ──
+        "ai_title": "Генерация с помощью ИИ",
+        "ai_mode": "Режим", "ai_mode_t2i": "Текст → Картинка", "ai_mode_i2i": "Картинка → Картинка",
+        "ai_mode_t2v": "Текст → Видео", "ai_mode_i2v": "Картинка → Видео",
+        "ai_mode_motion": "Картинка → Движение", "ai_mode_upscale": "Апскейл",
+        "ai_prompt": "Промпт", "ai_prompt_ph": "Опишите желаемые обои...",
+        "ai_negative": "Негативный промпт", "ai_negative_ph": "Чего избегать (необязательно)...",
+        "ai_model": "Модель", "ai_ratio": "Соотношение сторон", "ai_strength": "Сила",
+        "ai_generate": "Сгенерировать", "ai_generating": "Генерация...",
+        "ai_tokens": "Токены", "ai_cost": "Стоимость", "ai_balance_unknown": "—",
+        "ai_no_prompt": "Сначала введите промпт.",
+        "ai_submit_failed": "Не удалось отправить запрос генерации.",
+        "ai_filtering": "Модерация (NSFW-фильтр)...",
+        "ai_done": "Генерация завершена.",
+        "ai_failed": "Генерация не удалась.",
+        "ai_nsfw_flagged": "Результат помечен фильтром контента.",
+        "ai_results": "Результаты", "ai_save": "Сохранить", "ai_saved": "Сохранено в библиотеку",
+        "ai_login_needed": "Для ИИ-генерации нужен вход.\nЗапустите razer-login для авторизации.",
+        "ai_publish": "Опубликовать", "ai_upscale": "Апскейл", "ai_again": "Ещё раз",
+        "ai_advanced": "Дополнительно",
+        # ── Исходник для image2* ──
+        "ai_source": "Исходное изображение", "ai_pick_image": "Выбрать файл…",
+        "ai_uploading": "Загрузка исходника…", "ai_upload_failed": "Не удалось загрузить изображение.",
+        "ai_no_source": "Сначала выберите исходное изображение.", "ai_source_ready": "Исходник готов",
+        # ── Новые вкладки навигации ──
+        "home": "ГЛАВНАЯ", "profile": "ПРОФИЛЬ", "collections": "ПОДБОРКИ",
+        # ── Главная / Spotlight ──
+        "home_featured": "Рекомендуемое", "home_selections": "Подборки",
+        "home_empty": "Сейчас нет рекомендаций.",
+        # ── Профиль / Кошелёк ──
+        "profile_tokens": "ИИ-токены", "profile_silver": "Серебро",
+        "profile_balance": "Баланс", "profile_badges": "Бейджи",
+        "profile_topup": "Пополнение — в официальном приложении Razer Axon.",
+        "profile_no_login": "Войдите, чтобы увидеть профиль.\nЗапустите razer-login для авторизации.",
+        "profile_country": "Страна", "profile_userid": "ID пользователя",
+        # ── Подборки ──
+        "coll_follow": "ПОДПИСАТЬСЯ", "coll_following": "ВЫ ПОДПИСАНЫ",
+        "coll_empty": "Нет подборок.", "coll_followed": "Отслеживаемые",
+        "follow_ok": "Вы подписаны", "unfollow_ok": "Отписались", "follow_failed": "Не удалось",
     },
 }
 
@@ -144,6 +222,50 @@ def api_get(endpoint: str, params: dict, auth: str = "") -> dict | None:
             return json.loads(resp.read())
     except Exception:
         return None
+
+
+def api_post(endpoint: str, body: dict, auth: str = "") -> dict | None:
+    """POST a JSON body to the v1 API. Returns parsed JSON or None on error."""
+    url = f"{API_BASE}/{endpoint}"
+    headers = {"Content-Type": "application/json", "X-Version": API_VERSION, "X-Language": "en"}
+    if auth:
+        headers["Authorization"] = auth
+    data = json.dumps(body or {}).encode()
+    req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        try:
+            return json.loads(e.read())
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+
+def fetch_bytes(url: str) -> bytes | None:
+    """Fetch raw bytes from a CDN/result URL."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "RazerAxon/2.6.2.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read()
+    except Exception:
+        return None
+
+
+def http_put(url: str, data: bytes, content_type: str = "application/octet-stream",
+             extra_headers: dict | None = None) -> bool:
+    """PUT raw bytes to a presigned URL (S3/GCS-style upload). Returns success."""
+    headers = {"Content-Type": content_type}
+    if extra_headers:
+        headers.update(extra_headers)
+    req = urllib.request.Request(url, data=data, headers=headers, method="PUT")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return 200 <= resp.status < 300
+    except Exception:
+        return False
 
 
 def api_login(token_data: dict) -> tuple[str, str, str]:
@@ -1150,6 +1272,1090 @@ class ArtistPage:
             GLib.idle_add(widget.set_filename, str(path))
 
 
+# ── AI generation (createAI) ─────────────────────────────────────────
+
+# Aspect ratios from the Axon bundle (docs/axon_ui_features_full_inventory §2.3).
+AI_RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "21:9"]
+
+# method enum values (docs §2.2). text2image is the priority path; the rest are
+# scaffolded so the endpoint map is complete.
+AI_MODES = [
+    ("text2image", "ai_mode_t2i", "wallpaper/generate"),
+    ("image2image", "ai_mode_i2i", "wallpaper/generate/image2image"),
+    ("text2video", "ai_mode_t2v", "wallpaper/generate/video"),
+    ("image2video", "ai_mode_i2v", "wallpaper/generate/image2video"),
+    ("image2motion", "ai_mode_motion", "wallpaper/generate/image2motion"),
+    ("upscale", "ai_mode_upscale", "wallpaper/generate/upscale"),
+]
+
+# Generation status codes are runtime enums in the bundle and were not resolved
+# statically (docs §5). We treat known string/int markers generically and rely on
+# the presence of a result `image` URL to decide completion.
+_AI_POLL_INTERVAL_S = 4
+_AI_POLL_MAX_TRIES = 75  # ~5 min ceiling
+
+
+class CreateAIPage(Gtk.Box):
+    """AI wallpaper generation page (Axon `/createAI`), GTK4 in OpenAxon style.
+
+    Implements the documented text2image flow end-to-end against
+    `/wallpaper/generate/*` (docs/axon-api.md §6). Other modes are wired into the
+    endpoint map but text2image is the validated priority path. All network work
+    runs off-thread; UI updates marshal back via GLib.idle_add.
+    """
+
+    def __init__(self, app: "AxonApp"):
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL)
+        self.app = app
+        self._mode = "text2image"
+        self._ratio = "16:9"
+        self._models = []          # list of {id/name,...} from /generate/model
+        self._model_id = ""
+        self._busy = False
+        self._meta_loaded = False
+        self._build()
+
+    # ── UI ──
+    def _build(self):
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+
+        # Left: controls panel
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        panel.add_css_class("axon-ai-panel")
+        panel.set_size_request(360, -1)
+        panel.set_margin_start(24)
+        panel.set_margin_end(16)
+        panel.set_margin_top(20)
+        panel.set_margin_bottom(20)
+
+        title = Gtk.Label(label=tr("ai_title"))
+        title.add_css_class("axon-ai-h1")
+        title.set_xalign(0)
+        panel.append(title)
+
+        # Token balance indicator
+        bal_row = Gtk.Box(spacing=8)
+        bal_lbl = Gtk.Label(label=tr("ai_tokens") + ":")
+        bal_lbl.add_css_class("axon-author")
+        self.balance_value = Gtk.Label(label=tr("ai_balance_unknown"))
+        self.balance_value.add_css_class("axon-detail-title")
+        bal_row.append(bal_lbl)
+        bal_row.append(self.balance_value)
+        panel.append(bal_row)
+
+        # Mode dropdown
+        panel.append(self._field_label(tr("ai_mode")))
+        self.mode_dd = Gtk.DropDown.new_from_strings([tr(k) for _, k, _ in AI_MODES])
+        self.mode_dd.connect("notify::selected", self._on_mode_changed)
+        panel.append(self.mode_dd)
+
+        # Prompt
+        panel.append(self._field_label(tr("ai_prompt")))
+        self.prompt_view = Gtk.TextView()
+        self.prompt_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.prompt_view.add_css_class("axon-ai-textarea")
+        prompt_scroll = Gtk.ScrolledWindow()
+        prompt_scroll.set_size_request(-1, 96)
+        prompt_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        prompt_scroll.set_child(self.prompt_view)
+        prompt_scroll.add_css_class("axon-ai-textwrap")
+        panel.append(prompt_scroll)
+
+        # Negative prompt
+        panel.append(self._field_label(tr("ai_negative")))
+        self.neg_view = Gtk.TextView()
+        self.neg_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.neg_view.add_css_class("axon-ai-textarea")
+        neg_scroll = Gtk.ScrolledWindow()
+        neg_scroll.set_size_request(-1, 56)
+        neg_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        neg_scroll.set_child(self.neg_view)
+        neg_scroll.add_css_class("axon-ai-textwrap")
+        panel.append(neg_scroll)
+
+        # Ratio + Model row
+        panel.append(self._field_label(tr("ai_ratio")))
+        self.ratio_dd = Gtk.DropDown.new_from_strings(AI_RATIOS)
+        self.ratio_dd.set_selected(AI_RATIOS.index(self._ratio))
+        self.ratio_dd.connect("notify::selected", self._on_ratio_changed)
+        panel.append(self.ratio_dd)
+
+        panel.append(self._field_label(tr("ai_model")))
+        self.model_dd = Gtk.DropDown.new_from_strings([tr("loading")])
+        self.model_dd.connect("notify::selected", self._on_model_changed)
+        panel.append(self.model_dd)
+
+        # Strength (relevant for image2image / motion / upscale)
+        self.strength_label = self._field_label(tr("ai_strength"))
+        panel.append(self.strength_label)
+        adj = Gtk.Adjustment(value=0.5, lower=0.0, upper=1.0, step_increment=0.05)
+        self.strength_scale = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL,
+                                        adjustment=adj)
+        self.strength_scale.set_digits(2)
+        self.strength_scale.set_draw_value(True)
+        panel.append(self.strength_scale)
+        self._set_strength_visible(False)
+
+        # Source image picker (image2image / image2motion / image2video)
+        self.source_label = self._field_label(tr("ai_source"))
+        panel.append(self.source_label)
+        src_row = Gtk.Box(spacing=8)
+        self.source_btn = Gtk.Button(label=tr("ai_pick_image"))
+        self.source_btn.add_css_class("axon-btn-outline")
+        self.source_btn.connect("clicked", self._on_pick_source)
+        src_row.append(self.source_btn)
+        self.source_name = Gtk.Label(label="")
+        self.source_name.add_css_class("axon-author")
+        self.source_name.set_ellipsize(3)
+        self.source_name.set_hexpand(True)
+        self.source_name.set_xalign(0)
+        src_row.append(self.source_name)
+        panel.append(src_row)
+        self._source_path = ""        # local file chosen
+        self._source_key = ""         # uploaded object key/id returned by API
+        self._set_source_visible(False)
+
+        # Generate button
+        self.gen_btn = Gtk.Button(label=tr("ai_generate"))
+        self.gen_btn.add_css_class("axon-dl-btn")
+        self.gen_btn.set_margin_top(8)
+        self.gen_btn.connect("clicked", self._on_generate)
+        panel.append(self.gen_btn)
+
+        # Status line
+        self.status_lbl = Gtk.Label(label="")
+        self.status_lbl.add_css_class("axon-status")
+        self.status_lbl.set_xalign(0)
+        self.status_lbl.set_wrap(True)
+        panel.append(self.status_lbl)
+
+        panel_scroll = Gtk.ScrolledWindow()
+        panel_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        panel_scroll.set_child(panel)
+        panel_scroll.add_css_class("axon-sidebar")
+        self.append(panel_scroll)
+
+        # Right: results grid
+        right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        right.set_hexpand(True)
+        results_head = Gtk.Label(label=tr("ai_results"))
+        results_head.add_css_class("axon-ai-h1")
+        results_head.set_xalign(0)
+        results_head.set_margin_start(20)
+        results_head.set_margin_top(20)
+        right.append(results_head)
+
+        self.results_scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.results_flow = Gtk.FlowBox()
+        self.results_flow.set_homogeneous(True)
+        self.results_flow.set_max_children_per_line(4)
+        self.results_flow.set_min_children_per_line(1)
+        self.results_flow.set_column_spacing(12)
+        self.results_flow.set_row_spacing(12)
+        self.results_flow.set_margin_start(20)
+        self.results_flow.set_margin_end(20)
+        self.results_flow.set_margin_top(12)
+        self.results_flow.set_margin_bottom(12)
+        self.results_flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.results_scroll.set_child(self.results_flow)
+        right.append(self.results_scroll)
+        self.append(right)
+
+    def _field_label(self, text: str) -> Gtk.Label:
+        lbl = Gtk.Label(label=text)
+        lbl.add_css_class("axon-author")
+        lbl.set_xalign(0)
+        return lbl
+
+    def _set_strength_visible(self, visible: bool):
+        self.strength_label.set_visible(visible)
+        self.strength_scale.set_visible(visible)
+
+    def _set_source_visible(self, visible: bool):
+        self.source_label.set_visible(visible)
+        self.source_btn.set_visible(visible)
+        self.source_name.set_visible(visible)
+
+    def _needs_source(self) -> bool:
+        return self._mode in ("image2image", "image2motion", "image2video")
+
+    # ── Lazy metadata load (models, price, balance) ──
+    def ensure_loaded(self):
+        if self._meta_loaded:
+            return
+        self._meta_loaded = True
+        if not self.app.auth:
+            self._set_status(tr("ai_login_needed"))
+            return
+        threading.Thread(target=self._load_meta, daemon=True).start()
+
+    def _load_meta(self):
+        models = []
+        resp = api_get("wallpaper/generate/model", {}, auth=self.app.auth)
+        if resp and resp.get("code") == 200:
+            data = resp.get("data")
+            if isinstance(data, dict):
+                models = data.get("list") or data.get("models") or []
+            elif isinstance(data, list):
+                models = data
+        # Token balance (wallet) — best-effort; UI degrades gracefully.
+        balance = None
+        wresp = api_get("wallet/balance", {}, auth=self.app.auth)
+        if wresp and wresp.get("code") == 200 and isinstance(wresp.get("data"), dict):
+            d = wresp["data"]
+            balance = d.get("balance", d.get("token_counts", d.get("tokens")))
+        GLib.idle_add(self._apply_meta, models, balance)
+
+    def _apply_meta(self, models, balance):
+        self._models = models or []
+        names = []
+        for m in self._models:
+            if isinstance(m, dict):
+                names.append(str(m.get("name") or m.get("title") or m.get("id") or "model"))
+            else:
+                names.append(str(m))
+        if not names:
+            names = ["leonardo"]  # documented default supplier (docs §2.4)
+        self.model_dd.set_model(Gtk.StringList.new(names))
+        self.model_dd.set_selected(0)
+        self._sync_model_id()
+        if balance is not None:
+            self.balance_value.set_label(str(balance))
+
+    def _sync_model_id(self):
+        idx = self.model_dd.get_selected()
+        if 0 <= idx < len(self._models) and isinstance(self._models[idx], dict):
+            m = self._models[idx]
+            self._model_id = str(m.get("id") or m.get("model_id") or m.get("name") or "")
+        else:
+            sm = self.model_dd.get_model()
+            if isinstance(sm, Gtk.StringList) and idx >= 0:
+                self._model_id = sm.get_string(idx) or ""
+
+    # ── Control callbacks ──
+    def _on_mode_changed(self, dd, _param):
+        idx = dd.get_selected()
+        if 0 <= idx < len(AI_MODES):
+            self._mode = AI_MODES[idx][0]
+        self._set_strength_visible(self._mode in ("image2image", "image2motion", "upscale"))
+        self._set_source_visible(self._needs_source())
+
+    def _on_ratio_changed(self, dd, _param):
+        idx = dd.get_selected()
+        if 0 <= idx < len(AI_RATIOS):
+            self._ratio = AI_RATIOS[idx]
+
+    def _on_model_changed(self, dd, _param):
+        self._sync_model_id()
+
+    # ── Source-image picker + presigned upload (image2* flow, docs §2.6 #3) ──
+    def _on_pick_source(self, _btn):
+        dialog = Gtk.FileDialog()
+        dialog.set_title(tr("ai_pick_image"))
+        img_filter = Gtk.FileFilter()
+        img_filter.set_name("Images")
+        for pat in ("*.png", "*.jpg", "*.jpeg", "*.webp"):
+            img_filter.add_pattern(pat)
+        store = Gio.ListStore.new(Gtk.FileFilter)
+        store.append(img_filter)
+        dialog.set_filters(store)
+        dialog.set_default_filter(img_filter)
+        dialog.open(self.app.win, None, self._on_source_chosen)
+
+    def _on_source_chosen(self, dialog, result):
+        try:
+            gfile = dialog.open_finish(result)
+        except GLib.Error:
+            return
+        if not gfile:
+            return
+        path = gfile.get_path()
+        if not path:
+            return
+        self._source_path = path
+        self._source_key = ""   # invalidate any prior upload
+        self.source_name.set_label(Path(path).name)
+
+    def _upload_source(self) -> str:
+        """Upload the chosen source image via the documented presigned-PUT flow:
+        GET /generate/uploadurl → PUT bytes to presigned URL → POST /generate/upload.
+        Returns an object key/id for the generate payload, or "" on failure.
+
+        Payload field names are reconstructed from the bundle (docs §2.6, §5) and
+        are not live-validated; the method degrades gracefully.
+        """
+        path = self._source_path
+        if not path or not os.path.exists(path):
+            return ""
+        ext = Path(path).suffix.lower().lstrip(".") or "png"
+        ctype = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+                 "webp": "image/webp"}.get(ext, "application/octet-stream")
+        # 1. Ask the API for a presigned upload target.
+        resp = api_get("wallpaper/generate/uploadurl",
+                       {"file_type": ext, "content_type": ctype}, auth=self.app.auth)
+        if not resp or resp.get("code") != 200 or not isinstance(resp.get("data"), dict):
+            return ""
+        d = resp["data"]
+        put_url = d.get("upload_url") or d.get("url") or d.get("presigned_url") or ""
+        # Object identity the generate call will reference (several possible names).
+        key = (d.get("key") or d.get("object_key") or d.get("file_key")
+               or d.get("upload_id") or d.get("id") or d.get("resource") or "")
+        put_headers = d.get("headers") if isinstance(d.get("headers"), dict) else None
+        if not put_url:
+            return ""
+        # 2. PUT raw bytes to the presigned URL.
+        try:
+            data = Path(path).read_bytes()
+        except Exception:
+            return ""
+        if not http_put(put_url, data, content_type=ctype, extra_headers=put_headers):
+            return ""
+        # 3. Register the upload (metadata) — best-effort; key may already be usable.
+        confirm = api_post("wallpaper/generate/upload",
+                           {"key": key, "file_type": ext, "content_type": ctype},
+                           auth=self.app.auth)
+        if confirm and confirm.get("code") == 200 and isinstance(confirm.get("data"), dict):
+            cd = confirm["data"]
+            key = (cd.get("key") or cd.get("image") or cd.get("url")
+                   or cd.get("id") or key)
+        return key or put_url.split("?")[0]
+
+    def _endpoint_for_mode(self) -> str:
+        for m, _k, ep in AI_MODES:
+            if m == self._mode:
+                return ep
+        return "wallpaper/generate"
+
+    def _get_text(self, view: Gtk.TextView) -> str:
+        buf = view.get_buffer()
+        return buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False).strip()
+
+    def _set_status(self, text: str):
+        self.status_lbl.set_label(text)
+
+    # ── Generation flow ──
+    def _on_generate(self, _btn):
+        if self._busy:
+            return
+        if not self.app.auth:
+            self._set_status(tr("ai_login_needed"))
+            self.app.toast(tr("not_logged_in"))
+            return
+        prompt = self._get_text(self.prompt_view)
+        # text2* needs a prompt; image2* needs a source image (prompt optional).
+        if not self._needs_source() and not prompt:
+            self._set_status(tr("ai_no_prompt"))
+            self.app.toast(tr("ai_no_prompt"))
+            return
+        if self._needs_source() and not self._source_path:
+            self._set_status(tr("ai_no_source"))
+            self.app.toast(tr("ai_no_source"))
+            return
+
+        payload = {
+            "prompt": prompt,
+            "negative_prompt": self._get_text(self.neg_view),
+            "ratio": self._ratio,
+            "method": self._mode,
+        }
+        if self._model_id:
+            payload["model"] = self._model_id
+        if self._mode in ("image2image", "image2motion", "upscale"):
+            payload["strength"] = round(self.strength_scale.get_value(), 2)
+
+        self._busy = True
+        self.gen_btn.set_sensitive(False)
+        self.gen_btn.set_label(tr("ai_generating"))
+        self._set_status(tr("ai_uploading") if self._needs_source() else tr("ai_generating"))
+        threading.Thread(target=self._run_generation,
+                         args=(self._endpoint_for_mode(), payload, self._needs_source()),
+                         daemon=True).start()
+
+    def _run_generation(self, endpoint: str, payload: dict, needs_source: bool = False):
+        # image2* modes: upload the source first, then attach its key to the payload.
+        if needs_source:
+            key = self._source_key or self._upload_source()
+            if not key:
+                GLib.idle_add(self._gen_finished, tr("ai_upload_failed"))
+                return
+            self._source_key = key
+            # Field name varies by mode; provide the common aliases.
+            payload["image"] = key
+            payload["source"] = key
+            payload["upload_key"] = key
+            GLib.idle_add(self._set_status, tr("ai_generating"))
+        resp = api_post(endpoint, payload, auth=self.app.auth)
+        if not resp or resp.get("code") != 200:
+            GLib.idle_add(self._gen_finished, tr("ai_submit_failed"))
+            return
+        data = resp.get("data") or {}
+        order_id = (data.get("order_id") or data.get("id") or data.get("uuid")
+                    or data.get("generate_id") or "")
+        # Some immediate-return modes (e.g. upscale) may carry a result already.
+        immediate = self._extract_results(data)
+        if immediate:
+            GLib.idle_add(self._add_results, immediate)
+            GLib.idle_add(self._gen_finished, tr("ai_done"))
+            return
+        if not order_id:
+            GLib.idle_add(self._gen_finished, tr("ai_submit_failed"))
+            return
+        self._poll(order_id)
+
+    def _poll(self, order_id: str):
+        import time as _time
+        for _attempt in range(_AI_POLL_MAX_TRIES):
+            # blocking sleep is fine: this runs on a worker thread.
+            _time.sleep(_AI_POLL_INTERVAL_S)
+            info = api_get("wallpaper/generate/info", {"order_id": order_id},
+                           auth=self.app.auth)
+            if not info:
+                info = api_get("wallpaper/generate/detail", {"order_id": order_id},
+                               auth=self.app.auth)
+            if not info or info.get("code") != 200:
+                continue
+            data = info.get("data") or {}
+            status = str(data.get("status", "")).lower()
+            if status in ("filtering", "fitering", "moderating", "ai_filter_ing"):
+                GLib.idle_add(self._set_status, tr("ai_filtering"))
+            results = self._extract_results(data)
+            if results:
+                # NSFW: flagged items may carry a moderation marker (docs §2.6 #7).
+                flagged = any(r.get("nsfw") or r.get("is_nsfw") or r.get("blocked")
+                              for r in results)
+                GLib.idle_add(self._add_results, results)
+                GLib.idle_add(self._gen_finished,
+                              tr("ai_nsfw_flagged") if flagged else tr("ai_done"))
+                return
+            if status in ("failed", "error", "fail"):
+                GLib.idle_add(self._gen_finished, tr("ai_failed"))
+                return
+        GLib.idle_add(self._gen_finished, tr("ai_failed"))
+
+    def _extract_results(self, data: dict) -> list:
+        """Normalise a generate response into a list of result dicts with image URLs.
+
+        Tolerant to the several shapes the API returns (single item, `list`,
+        `details`, `results`) since exact payloads were not validated live
+        (docs §5)."""
+        if not isinstance(data, dict):
+            return []
+        candidates = []
+        for key in ("list", "details", "results", "items"):
+            v = data.get(key)
+            if isinstance(v, list):
+                candidates.extend(v)
+        # single-result shape
+        if not candidates and (data.get("image") or data.get("image_url") or data.get("url")):
+            candidates.append(data)
+        out = []
+        for c in candidates:
+            if not isinstance(c, dict):
+                continue
+            url = (c.get("image") or c.get("image_url") or c.get("url")
+                   or c.get("result") or c.get("preview"))
+            if url:
+                out.append({"url": url, "prompt": c.get("prompt", ""),
+                            "type": c.get("type", 1),
+                            "nsfw": c.get("nsfw") or c.get("is_nsfw") or c.get("blocked"),
+                            "detail_id": c.get("detail_id") or c.get("id") or ""})
+        return out
+
+    def _gen_finished(self, status_text: str):
+        self._busy = False
+        self.gen_btn.set_sensitive(True)
+        self.gen_btn.set_label(tr("ai_generate"))
+        self._set_status(status_text)
+        self.app.toast(status_text)
+
+    # ── Results rendering ──
+    def _add_results(self, results: list):
+        for r in results:
+            card = self._build_result_card(r)
+            self.results_flow.insert(card, 0)
+            fb_child = card.get_parent()
+            if fb_child:
+                fb_child.set_focusable(False)
+
+    def _build_result_card(self, r: dict) -> Gtk.Box:
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        card.add_css_class("axon-card")
+        card.set_size_request(240, -1)
+
+        pic = Gtk.Picture()
+        pic.set_content_fit(Gtk.ContentFit.COVER)
+        pic.set_size_request(240, 135)
+        card.append(pic)
+        threading.Thread(target=self._load_result_image, args=(r["url"], pic),
+                         daemon=True).start()
+
+        if r.get("prompt"):
+            cap = Gtk.Label(label=r["prompt"][:80])
+            cap.set_xalign(0)
+            cap.set_wrap(True)
+            cap.add_css_class("axon-author")
+            cap.set_margin_start(4)
+            card.append(cap)
+
+        if r.get("nsfw"):
+            warn = Gtk.Label(label=tr("ai_nsfw_flagged"))
+            warn.add_css_class("axon-status")
+            warn.set_xalign(0)
+            warn.set_margin_start(4)
+            card.append(warn)
+
+        btn_row = Gtk.Box(spacing=6)
+        btn_row.set_margin_start(4)
+        btn_row.set_margin_bottom(4)
+        save_btn = Gtk.Button(label=tr("ai_save"))
+        save_btn.add_css_class("axon-apply-btn")
+        save_btn.connect("clicked", lambda b, rr=r: self._on_save(b, rr))
+        btn_row.append(save_btn)
+        apply_btn = Gtk.Button(label=tr("apply"))
+        apply_btn.add_css_class("axon-dl-btn")
+        apply_btn.connect("clicked", lambda b, rr=r: self._on_apply(b, rr))
+        btn_row.append(apply_btn)
+        card.append(btn_row)
+        return card
+
+    def _load_result_image(self, url: str, pic: Gtk.Picture):
+        # Motion/video results (.mp4) have no still preview; skip thumbnail.
+        if url.lower().split("?")[0].endswith((".mp4", ".webm")):
+            return
+        data = fetch_bytes(url)
+        if not data:
+            return
+        try:
+            loader = GdkPixbuf.PixbufLoader()
+            loader.write(data)
+            loader.close()
+            pix = loader.get_pixbuf()
+            if pix:
+                GLib.idle_add(pic.set_pixbuf, pix)
+        except Exception:
+            pass
+
+    def _save_result(self, r: dict) -> str | None:
+        """Download a generated result into the OpenAxon library layout."""
+        url = r["url"]
+        clean = url.split("?")[0]
+        ext = ".mp4" if clean.endswith((".mp4", ".webm")) else (
+            ".webp" if clean.endswith(".webp") else ".png")
+        wid = "ai_" + (str(r.get("detail_id")) or str(abs(hash(url)) % 10_000_000))
+        dest_dir = DOWNLOAD_DIR / wid / "Extracted"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / f"result{ext}"
+        data = fetch_bytes(url)
+        if not data:
+            return None
+        dest.write_bytes(data)
+        if r.get("prompt"):
+            try:
+                (DOWNLOAD_DIR / wid / "prompt.txt").write_text(r["prompt"], encoding="utf-8")
+            except Exception:
+                pass
+        return str(dest)
+
+    def _on_save(self, _btn, r: dict):
+        def _work():
+            path = self._save_result(r)
+            GLib.idle_add(self.app.toast,
+                          tr("ai_saved") if path else tr("failed"))
+        threading.Thread(target=_work, daemon=True).start()
+
+    def _on_apply(self, _btn, r: dict):
+        def _work():
+            path = self._save_result(r)
+            if not path:
+                GLib.idle_add(self.app.toast, tr("failed"))
+                return
+            is_video = path.lower().endswith((".mp4", ".webm"))
+            ok = apply_wallpaper(path, is_video=is_video)
+            GLib.idle_add(self.app.toast,
+                          tr("applied") if ok else tr("failed_apply"))
+        threading.Thread(target=_work, daemon=True).start()
+
+
+# ── Spotlight / Home page ────────────────────────────────────────────
+
+class HomePage(Gtk.Box):
+    """Spotlight/Home start screen (Axon `/` `NAV_DISCOVER`).
+
+    Pulls `/spotlight/index` + `/spotlight/feed` + `/feed/selections` and renders
+    them as featured rows of wallpaper cards. All shapes are tolerated since the
+    payloads were not live-validated (docs §5); empty data degrades to a notice.
+    """
+
+    def __init__(self, app: "AxonApp"):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.app = app
+        self._loaded = False
+        self._build()
+
+    def _build(self):
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        self.content.set_margin_start(24)
+        self.content.set_margin_end(24)
+        self.content.set_margin_top(20)
+        self.content.set_margin_bottom(24)
+        scroll.set_child(self.content)
+        self.append(scroll)
+        self.status_lbl = Gtk.Label(label=tr("loading"))
+        self.status_lbl.add_css_class("axon-status")
+        self.status_lbl.set_margin_top(40)
+        self.content.append(self.status_lbl)
+
+    def ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        if not self.app.auth:
+            self.status_lbl.set_label(tr("home_empty"))
+            return
+        threading.Thread(target=self._load, daemon=True).start()
+
+    def _load(self):
+        sections = []  # (title, [wp dicts])
+        # Spotlight index/feed — flatten any nested wallpaper lists we find.
+        for ep, title in (("spotlight/index", tr("home_featured")),
+                          ("spotlight/feed", tr("home_featured")),
+                          ("feed/selections", tr("home_selections"))):
+            resp = api_get(ep, {"pi": "1", "ps": "20"}, auth=self.app.auth)
+            if not resp or resp.get("code") != 200:
+                continue
+            items = self._extract_wallpapers(resp.get("data"))
+            if items:
+                sections.append((title, items))
+        GLib.idle_add(self._render, sections)
+
+    def _extract_wallpapers(self, data) -> list:
+        """Walk a spotlight/feed payload and collect dicts that look like wallpapers."""
+        found = []
+        seen = set()
+
+        def visit(node):
+            if isinstance(node, dict):
+                wid = node.get("wallpaper_id")
+                if wid and node.get("thumbnail"):
+                    if wid not in seen:
+                        seen.add(wid)
+                        found.append(node)
+                for v in node.values():
+                    visit(v)
+            elif isinstance(node, list):
+                for v in node:
+                    visit(v)
+
+        visit(data)
+        return found
+
+    def _render(self, sections):
+        child = self.content.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self.content.remove(child)
+            child = nxt
+
+        if not sections:
+            empty = Gtk.Label(label=tr("home_empty"))
+            empty.add_css_class("axon-status")
+            empty.set_margin_top(40)
+            self.content.append(empty)
+            return
+
+        for title, items in sections:
+            head = Gtk.Label(label=title)
+            head.add_css_class("axon-ai-h1")
+            head.set_xalign(0)
+            self.content.append(head)
+
+            flow = Gtk.FlowBox()
+            flow.set_homogeneous(True)
+            flow.set_max_children_per_line(6)
+            flow.set_min_children_per_line(2)
+            flow.set_column_spacing(10)
+            flow.set_row_spacing(10)
+            flow.set_selection_mode(Gtk.SelectionMode.NONE)
+            for wp in items[:24]:
+                card = WallpaperCard(wp, self.app)
+                flow.append(card)
+                fb = card.get_parent()
+                if fb:
+                    fb.set_focusable(False)
+            self.content.append(flow)
+
+
+# ── Profile / Wallet page ────────────────────────────────────────────
+
+class ProfilePage(Gtk.Box):
+    """Profile + wallet screen (Axon `/hall/personal`, account avatar/badges).
+
+    Shows the signed-in account, the AI-token / Silver balances (`/wallet/balance`,
+    `/silver/detail`) and badges (`/badge/list`). Top-up itself stays in the
+    official client. Field names are reconstructed (docs §5) and read defensively.
+    """
+
+    def __init__(self, app: "AxonApp"):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.app = app
+        self._loaded = False
+        self._build()
+
+    def _build(self):
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        self.content.set_margin_start(24)
+        self.content.set_margin_end(24)
+        self.content.set_margin_top(24)
+        self.content.set_margin_bottom(24)
+        scroll.set_child(self.content)
+        self.append(scroll)
+
+    def ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        if not self.app.auth:
+            lbl = Gtk.Label(label=tr("profile_no_login"))
+            lbl.add_css_class("axon-status")
+            lbl.set_margin_top(40)
+            self.content.append(lbl)
+            return
+        # Header with what we already know from login; details fill in async.
+        self._build_header()
+        threading.Thread(target=self._load, daemon=True).start()
+
+    def _build_header(self):
+        row = Gtk.Box(spacing=16)
+        self.avatar = Gtk.Picture()
+        self.avatar.set_content_fit(Gtk.ContentFit.COVER)
+        self.avatar.set_size_request(72, 72)
+        self.avatar.add_css_class("axon-avatar")
+        row.append(self.avatar)
+
+        info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        info.set_valign(Gtk.Align.CENTER)
+        self.name_lbl = Gtk.Label()
+        self.name_lbl.add_css_class("axon-ai-h1")
+        self.name_lbl.set_xalign(0)
+        self.name_lbl.set_label(self.app.account_name or tr("profile"))
+        info.append(self.name_lbl)
+        sub = Gtk.Label()
+        sub.add_css_class("axon-author")
+        sub.set_xalign(0)
+        parts = []
+        if self.app._uuid:
+            parts.append(f"{tr('profile_userid')}: {self.app._uuid}")
+        if self.app._country:
+            parts.append(f"{tr('profile_country')}: {self.app._country}")
+        sub.set_label("   ".join(parts))
+        info.append(sub)
+        row.append(info)
+        self.content.append(row)
+
+        # Wallet cards
+        wallet_row = Gtk.Box(spacing=12)
+        wallet_row.set_margin_top(8)
+        self.token_card = self._wallet_card(tr("profile_tokens"), tr("ai_balance_unknown"))
+        self.silver_card = self._wallet_card(tr("profile_silver"), tr("ai_balance_unknown"))
+        wallet_row.append(self.token_card[0])
+        wallet_row.append(self.silver_card[0])
+        self.content.append(wallet_row)
+
+        topup = Gtk.Label(label=tr("profile_topup"))
+        topup.add_css_class("axon-status")
+        topup.set_xalign(0)
+        self.content.append(topup)
+
+        # Badges section (filled async)
+        self.badges_head = Gtk.Label(label=tr("profile_badges"))
+        self.badges_head.add_css_class("axon-detail-title")
+        self.badges_head.set_xalign(0)
+        self.badges_head.set_margin_top(12)
+        self.badges_head.set_visible(False)
+        self.content.append(self.badges_head)
+        self.badges_flow = Gtk.FlowBox()
+        self.badges_flow.set_max_children_per_line(12)
+        self.badges_flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.content.append(self.badges_flow)
+
+        if self.app.avatar_url:
+            threading.Thread(target=self._load_avatar, args=(self.app.avatar_url,),
+                             daemon=True).start()
+
+    def _wallet_card(self, title: str, value: str):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.add_css_class("axon-coll-info")
+        box.set_size_request(160, -1)
+        t = Gtk.Label(label=title)
+        t.add_css_class("axon-author")
+        t.set_xalign(0)
+        box.append(t)
+        v = Gtk.Label(label=value)
+        v.add_css_class("axon-ai-h1")
+        v.set_xalign(0)
+        box.append(v)
+        return (box, v)
+
+    def _load(self):
+        # Account identity (name/avatar) — best-effort from personal state.
+        name = ""
+        avatar = ""
+        sresp = api_get("feed/personal/state", {}, auth=self.app.auth)
+        if sresp and sresp.get("code") == 200 and isinstance(sresp.get("data"), dict):
+            sd = sresp["data"]
+            name = (sd.get("razer_id") or sd.get("nickname") or sd.get("name")
+                    or sd.get("user_name") or "")
+            avatar = sd.get("avatar") or sd.get("avatar_url") or ""
+        if name or avatar:
+            GLib.idle_add(self._apply_identity, name, avatar)
+
+        token_balance = None
+        silver_balance = None
+        wresp = api_get("wallet/balance", {}, auth=self.app.auth)
+        if wresp and wresp.get("code") == 200 and isinstance(wresp.get("data"), dict):
+            d = wresp["data"]
+            token_balance = d.get("balance", d.get("token_counts", d.get("tokens")))
+            silver_balance = d.get("silver", d.get("silver_balance"))
+        if silver_balance is None:
+            sresp = api_get("silver/detail", {}, auth=self.app.auth)
+            if sresp and sresp.get("code") == 200 and isinstance(sresp.get("data"), dict):
+                sd = sresp["data"]
+                silver_balance = sd.get("silver", sd.get("balance", sd.get("total")))
+        badges = []
+        bresp = api_get("badge/list", {}, auth=self.app.auth)
+        if bresp and bresp.get("code") == 200:
+            bd = bresp.get("data")
+            if isinstance(bd, dict):
+                badges = bd.get("list") or bd.get("badges") or []
+            elif isinstance(bd, list):
+                badges = bd
+        GLib.idle_add(self._apply, token_balance, silver_balance, badges)
+
+    def _apply_identity(self, name, avatar):
+        if name:
+            self.app.account_name = name
+            self.name_lbl.set_label(name)
+        if avatar:
+            self.app.avatar_url = avatar
+            threading.Thread(target=self._load_avatar, args=(avatar,), daemon=True).start()
+
+    def _apply(self, token_balance, silver_balance, badges):
+        if token_balance is not None:
+            self.token_card[1].set_label(str(token_balance))
+            self.app.token_balance = token_balance
+        if silver_balance is not None:
+            self.silver_card[1].set_label(str(silver_balance))
+        if badges:
+            self.badges_head.set_visible(True)
+            for b in badges[:24]:
+                if not isinstance(b, dict):
+                    continue
+                img_url = b.get("image") or b.get("icon") or b.get("badge_image") or ""
+                pic = Gtk.Picture()
+                pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+                pic.set_size_request(48, 48)
+                pic.set_tooltip_text(str(b.get("name") or b.get("title") or ""))
+                self.badges_flow.append(pic)
+                if img_url:
+                    threading.Thread(target=self._load_into, args=(img_url, pic),
+                                     daemon=True).start()
+
+    def _load_avatar(self, url):
+        data = fetch_bytes(url)
+        if not data:
+            return
+        try:
+            loader = GdkPixbuf.PixbufLoader()
+            loader.write(data)
+            loader.close()
+            pix = loader.get_pixbuf()
+            if pix:
+                GLib.idle_add(self.avatar.set_pixbuf, pix)
+        except Exception:
+            pass
+
+    def _load_into(self, url, pic):
+        data = fetch_bytes(url)
+        if not data:
+            return
+        try:
+            loader = GdkPixbuf.PixbufLoader()
+            loader.write(data)
+            loader.close()
+            pix = loader.get_pixbuf()
+            if pix:
+                GLib.idle_add(pic.set_pixbuf, pix)
+        except Exception:
+            pass
+
+
+# ── Collections page ─────────────────────────────────────────────────
+
+class CollectionsPage(Gtk.Box):
+    """Curated Collections / Series with follow toggle (Axon `/collections`).
+
+    Lists `/collection/list`, marks followed entries from `/collection/followlist`,
+    and toggles via `POST /collection/follow/{add|cancel}`. Reuses the same row
+    layout as the Gallery → Series sub-tab.
+    """
+
+    def __init__(self, app: "AxonApp"):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.app = app
+        self._loaded = False
+        self._followed_ids = set()
+        self._build()
+
+    def _build(self):
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        self.content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        self.content.set_margin_start(20)
+        self.content.set_margin_end(20)
+        self.content.set_margin_top(16)
+        self.content.set_margin_bottom(16)
+        scroll.set_child(self.content)
+        self.append(scroll)
+        self.status_lbl = Gtk.Label(label=tr("loading"))
+        self.status_lbl.add_css_class("axon-status")
+        self.status_lbl.set_margin_top(40)
+        self.content.append(self.status_lbl)
+
+    def ensure_loaded(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        if not self.app.auth:
+            self.status_lbl.set_label(tr("coll_empty"))
+            return
+        threading.Thread(target=self._load, daemon=True).start()
+
+    def _load(self):
+        followed = set()
+        fresp = api_get("collection/followlist", {"pi": "1", "ps": "50"}, auth=self.app.auth)
+        if fresp and fresp.get("code") == 200 and isinstance(fresp.get("data"), dict):
+            for c in (fresp["data"].get("list") or []):
+                if isinstance(c, dict) and c.get("collection_id"):
+                    followed.add(str(c["collection_id"]))
+        resp = api_get("collection/list", {"pi": "1", "ps": "30"}, auth=self.app.auth)
+        items = []
+        if resp and resp.get("code") == 200 and isinstance(resp.get("data"), dict):
+            items = resp["data"].get("list") or []
+        GLib.idle_add(self._render, items, followed)
+
+    def _render(self, items, followed):
+        self._followed_ids = followed
+        child = self.content.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self.content.remove(child)
+            child = nxt
+
+        if not items:
+            empty = Gtk.Label(label=tr("coll_empty"))
+            empty.add_css_class("axon-status")
+            empty.set_margin_top(40)
+            self.content.append(empty)
+            return
+
+        for coll in items:
+            self.content.append(self._build_row(coll))
+
+    def _build_row(self, coll):
+        cid = str(coll.get("collection_id", ""))
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+
+        # Title + follow toggle
+        title_box = Gtk.Box(spacing=10)
+        title = Gtk.Label(label=coll.get("title") or coll.get("collection_name") or "?")
+        title.add_css_class("axon-title")
+        title.set_xalign(0)
+        title.set_hexpand(True)
+        title_box.append(title)
+
+        is_followed = cid in self._followed_ids
+        follow_btn = Gtk.Button(label=tr("coll_following") if is_followed else tr("coll_follow"))
+        follow_btn.add_css_class("axon-apply-btn" if is_followed else "axon-dl-btn")
+        follow_btn.connect("clicked", self._on_follow, coll, follow_btn)
+        title_box.append(follow_btn)
+        outer.append(title_box)
+
+        desc = coll.get("brief_description", "")
+        if desc:
+            d = Gtk.Label(label=desc[:160])
+            d.set_wrap(True)
+            d.set_xalign(0)
+            d.add_css_class("axon-author")
+            outer.append(d)
+
+        # Thumbnails
+        hscroll = Gtk.ScrolledWindow()
+        hscroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+        hscroll.set_size_request(-1, 110)
+        hbox = Gtk.Box(spacing=8)
+        for wp in (coll.get("wallpapers") or [])[:8]:
+            if not isinstance(wp, dict):
+                continue
+            thumb = Gtk.Picture()
+            thumb.set_content_fit(Gtk.ContentFit.COVER)
+            thumb.set_size_request(180, 100)
+            hbox.append(thumb)
+            url = wp.get("thumbnail", "")
+            wid = wp.get("wallpaper_id", str(id(wp)))
+            if url:
+                threading.Thread(target=self._load_thumb, args=(url, thumb, wid),
+                                 daemon=True).start()
+        hscroll.set_child(hbox)
+        outer.append(hscroll)
+        return outer
+
+    def _load_thumb(self, url, widget, wid):
+        path = download_thumbnail(url, f"coll_{wid}")
+        if path:
+            GLib.idle_add(widget.set_filename, str(path))
+
+    def _on_follow(self, _btn, coll, btn):
+        cid = str(coll.get("collection_id", ""))
+        if not cid:
+            return
+        currently = cid in self._followed_ids
+        action = "cancel" if currently else "add"
+        btn.set_sensitive(False)
+        threading.Thread(target=self._do_follow, args=(cid, action, btn), daemon=True).start()
+
+    def _do_follow(self, cid, action, btn):
+        resp = api_post(f"collection/follow/{action}", {"collection_id": cid},
+                        auth=self.app.auth)
+        ok = bool(resp and resp.get("code") == 200)
+
+        def _ui():
+            btn.set_sensitive(True)
+            if not ok:
+                self.app.toast(tr("follow_failed"))
+                return
+            if action == "add":
+                self._followed_ids.add(cid)
+                btn.set_label(tr("coll_following"))
+                btn.remove_css_class("axon-dl-btn")
+                btn.add_css_class("axon-apply-btn")
+                self.app.toast(tr("follow_ok"))
+            else:
+                self._followed_ids.discard(cid)
+                btn.set_label(tr("coll_follow"))
+                btn.remove_css_class("axon-apply-btn")
+                btn.add_css_class("axon-dl-btn")
+                self.app.toast(tr("unfollow_ok"))
+        GLib.idle_add(_ui)
+
+
 # ── Main application ─────────────────────────────────────────────────
 
 class AxonApp(Adw.Application):
@@ -1159,6 +2365,9 @@ class AxonApp(Adw.Application):
         self.auth = ""
         self._uuid = ""
         self._country = ""
+        self.account_name = ""
+        self.avatar_url = ""
+        self.token_balance = None
         self._categories = []
         self._current_page = 1
         self._total_count = 0
@@ -1399,6 +2608,17 @@ class AxonApp(Adw.Application):
             /* ── Tooltip ── */
             tooltip { background-color: #222; color: #fff; border-radius: 2px;
                       padding: 4px 8px; font-size: 12px; }
+
+            /* ── AI generate page ── */
+            .axon-ai-panel { background-color: #222; }
+            .axon-ai-h1 { color: #fff; font-family: "RazerF5"; font-weight: 800;
+                          font-size: 18px; }
+            .axon-ai-textwrap { background-color: #161616; border: 1px solid #333;
+                                border-radius: 4px; }
+            .axon-ai-textwrap:focus-within { border-color: #44d62c; }
+            .axon-ai-textarea { background-color: transparent; color: #fff;
+                                font-size: 13px; padding: 6px; }
+            .axon-ai-textarea text { background-color: transparent; }
         """)
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -1419,7 +2639,8 @@ class AxonApp(Adw.Application):
 
         # Nav buttons
         self._nav_buttons = {}
-        for nav_id in ["gallery", "create", "community", "library"]:
+        for nav_id in ["home", "gallery", "create", "collections",
+                       "community", "library", "profile"]:
             btn = Gtk.Button(label=tr(nav_id))
             if nav_id == "gallery":
                 btn.add_css_class("axon-topbar-active")
@@ -1615,6 +2836,22 @@ class AxonApp(Adw.Application):
         self.content_stack.add_named(self.library_scroll, "library")
         self._library_loaded = False
 
+        # ── Create / AI generation page ──
+        self.ai_page = CreateAIPage(self)
+        self.content_stack.add_named(self.ai_page, "create")
+
+        # ── Home / Spotlight page ──
+        self.home_page = HomePage(self)
+        self.content_stack.add_named(self.home_page, "home")
+
+        # ── Profile / Wallet page ──
+        self.profile_page = ProfilePage(self)
+        self.content_stack.add_named(self.profile_page, "profile")
+
+        # ── Collections page ──
+        self.collections_page = CollectionsPage(self)
+        self.content_stack.add_named(self.collections_page, "collections")
+
         body.append(self.content_stack)
         root.append(body)
 
@@ -1709,7 +2946,17 @@ class AxonApp(Adw.Application):
             self._library_loaded = False
             threading.Thread(target=self._load_library, daemon=True).start()
         elif nav_id == "create":
-            self.toast(tr("coming_soon"))
+            self.content_stack.set_visible_child_name("create")
+            self.ai_page.ensure_loaded()
+        elif nav_id == "home":
+            self.content_stack.set_visible_child_name("home")
+            self.home_page.ensure_loaded()
+        elif nav_id == "profile":
+            self.content_stack.set_visible_child_name("profile")
+            self.profile_page.ensure_loaded()
+        elif nav_id == "collections":
+            self.content_stack.set_visible_child_name("collections")
+            self.collections_page.ensure_loaded()
 
     def _load_community(self):
         """Load community/popular wallpapers (paper_source=community)."""
