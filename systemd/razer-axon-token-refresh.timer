@@ -1,0 +1,14 @@
+[Unit]
+Description=Periodically refresh the Razer Axon JWT token
+Documentation=https://github.com/wehrwolfmann/openaxon
+
+[Timer]
+# Первый прогон вскоре после входа, затем каждые 30 мин. razer-login.py
+# --refresh реально обновляет токен только когда он истекает в течение часа
+# (token_needs_refresh) — остальные прогоны быстрый no-op.
+OnStartupSec=2min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

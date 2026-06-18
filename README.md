@@ -10,6 +10,7 @@
 |------|----------|
 | `razer-login.py` | Авторизация в Razer ID |
 | `razer-token-inject.py` | Инжекция токена в Razer Central Service (работа без патча DLL) |
+| `razer-token-refresh.sh` | Тихое авто-обновление токена (для systemd `--user` таймера, см. `systemd/`) |
 | `razer-axon-gui.py` | Нативный GTK4/Adwaita клиент для Linux |
 | `openaxon-player.py` | Нативный wallpaper daemon (видео/статика, мультимонитор, эффекты) |
 | `razer-axon.sh` | Скрипт запуска оригинального Axon через Wine |
@@ -180,7 +181,30 @@ razer-token-inject.py     # Инжектировать токен в серви�
 razer-token-inject.py --status  # Проверить состояние
 ```
 
-Токены истекают примерно через 24 часа. Обновите через `razer-login.py`, затем `razer-token-inject.py`.
+Токены истекают примерно через 24 часа. Обновить можно вручную (`razer-login.py`), но удобнее настроить **авто-обновление** (ниже).
+
+### Авто-обновление токена (без повторного входа)
+
+`razer-login.py --refresh` тихо получает новый токен по сохранённым session-cookie
+Razer ID — **без окна входа** — и только когда токен истекает в течение часа
+(иначе быстрый no-op). Пока жива сессия Razer ID, повторно вводить логин/пароль не нужно.
+
+`razer-token-refresh.sh` оборачивает это: вызывает `--refresh` и синхронизирует свежий
+токен в Wine-префикс (туда, откуда патч `RazerAxon.UserManager.dll` читает
+`wine_login_token.json`). Поставьте на systemd `--user` таймер (раз в 30 мин):
+
+```bash
+# Юниты в systemd/ ставят %h/Projects/openaxon/razer-token-refresh.sh —
+# поправьте ExecStart под свой путь, если репозиторий лежит иначе.
+cp systemd/razer-axon-token-refresh.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+# WebKit для silent-refresh нужен доступ к графической сессии:
+systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XAUTHORITY DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR
+systemctl --user enable --now razer-axon-token-refresh.timer
+```
+
+Когда session-cookie в итоге истекут (недели), таймер залогирует ошибку — тогда
+один раз войдите интерактивно (`razer-login.py`).
 
 ### Запуск
 
