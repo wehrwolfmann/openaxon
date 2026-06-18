@@ -10,15 +10,14 @@ AXON_DIR="$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon"
 AXON_EXE="$AXON_DIR/RazerAxon.exe"
 PATCHED_DLL="$(dirname "$(readlink -f "$0")")/patch/RazerAxon.UserManager.dll"
 
-# Chromium-флаги WebView2. --disable-gpu-process-crash-limit — КЛЮЧЕВОЙ: снимает
-# фатальный лимит «3 краша», из-за которого browser-процесс под Wine выходит с
-# BrowserProcessExited (~16с после старта) и UI-окно закрывается/пустеет («белый
-# экран»). Корень крашей — DCompositionCreateDevice E_NOTIMPL (Wine не реализует
-# DirectComposition). См. docs/axon_installer_wine_diagnosis_2026_05_31.md.
-# ВАЖНО: эта же строка ПИШЕТСЯ В РЕЕСТР (HKCU\Environment) функцией
-# apply_webview2_gpu_fix, чтобы фикс действовал при ЛЮБОМ запуске Axon (меню Wine,
-# protocol-handler RazerAxon:, GUI), а не только через этот скрипт.
-WV2_BROWSER_ARGS="--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer --disable-gpu-sandbox --disable-gpu-process-crash-limit --disable-features=RendererCodeIntegrity --disable-crash-reporter --disable-renderer-backgrounding --disable-background-timer-throttling"
+# Chromium-флаги WebView2 (вспомогательные). Настоящий фикс чёрного/белого экрана —
+# версия win7 для msedgewebview2.exe (см. apply_webview2_gpu_fix ниже): она уводит
+# презентацию кадра на GDI BitBlt вместо DirectComposition, который Wine не умеет.
+# Флаг --disable-gpu-process-crash-limit УБРАН как избыточный при win7 (краш-цикл
+# DComp устранён в корне; флаг лишь маскировал симптом). Эта строка ПИШЕТСЯ В РЕЕСТР
+# (HKCU\Environment) функцией apply_webview2_gpu_fix, чтобы флаги действовали при
+# ЛЮБОМ запуске Axon (меню Wine, protocol-handler RazerAxon:, GUI), не только отсюда.
+WV2_BROWSER_ARGS="--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer --disable-gpu-sandbox --disable-features=RendererCodeIntegrity --disable-crash-reporter --disable-renderer-backgrounding --disable-background-timer-throttling"
 
 # Опциональный fixed-version WebView2 рантайм (стабильнее evergreen под Wine).
 # Если каталог существует и содержит msedgewebview2.exe — Axon использует именно
@@ -87,15 +86,15 @@ check_deps() {
 # (= порог DComp) → именно он давал чёрный экран.
 apply_webview2_gpu_fix() {
     # Идемпотентно: применяем только если ещё не настроено. Проверяем HW-accel,
-    # env-флаг crash-limit, И что у msedgewebview2.exe именно win7 (НЕ win81 —
+    # наличие env-переменной WEBVIEW2_*, И что у msedgewebview2.exe именно win7 (НЕ win81 —
     # иначе старые префиксы с win81 не обновятся и останутся чёрными).
     local need=0
     grep -aiq '"HardwareAccelerationModeEnabled"=dword:00000000' "$WINEPREFIX/system.reg" 2>/dev/null || need=1
     grep -aiA2 'AppDefaults\\\\msedgewebview2.exe' "$WINEPREFIX/user.reg" 2>/dev/null | grep -qi '"win7"' || need=1
-    grep -aiq 'disable-gpu-process-crash-limit' "$WINEPREFIX/user.reg" 2>/dev/null || need=1
+    grep -aiq 'WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS' "$WINEPREFIX/user.reg" 2>/dev/null || need=1
     [ "$need" = 0 ] && return 0
 
-    log "Применяю WebView2 GPU-fix (реестр: HW-accel off + win7 рендереру + env crash-limit для всех запусков)..."
+    log "Применяю WebView2 GPU-fix (реестр: HW-accel off + win7 рендереру + env-флаги для всех запусков)..."
     local reg
     reg="$(mktemp --suffix=.reg)"
     # \\ в .reg-значении = одиночный бэкслеш; флаги бэкслешей не содержат, так что
@@ -196,12 +195,11 @@ main() {
     # --disable-gpu (софтверный композитинг), падает 0x80000003 на
     # DCompositionCreateDevice (E_NOTIMPL в Wine, см. chrome_debug.log) и после
     # 3 крашей browser фаталится «GPU process isn't usable. Goodbye» →
-    # BrowserProcessExited. Реестр-политика HardwareAccelerationModeEnabled=0
-    # (apply_webview2_gpu_fix) сама по себе цикл не останавливает.
-    # --disable-gpu-process-crash-limit — ключевой: снимает лимит «3 краша»,
-    # browser живёт при цикличном перезапуске viz (проверено 2026-06-12:
-    # >5.5 мин, fatal=0; без флага смерть на ~11с). --disable-gpu-sandbox
-    # убирает ещё один путь breakpoint при init GPU-sandbox.
+    # BrowserProcessExited. Настоящее решение — win7 для msedgewebview2.exe
+    # (apply_webview2_gpu_fix): viz перестаёт звать DComp, краш-цикл исчезает.
+    # Поэтому --disable-gpu-process-crash-limit УБРАН (был лишь маскировкой
+    # симптома; при win7 не нужен). --disable-gpu-sandbox оставлен — убирает
+    # ещё один путь breakpoint при init GPU-sandbox.
     export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="$WV2_BROWSER_ARGS"
 
     # Если установлен fixed-version рантайм — используем его (стабильнее evergreen),

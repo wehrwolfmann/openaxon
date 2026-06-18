@@ -250,15 +250,15 @@ install_webview2_fixed() {
 # Razer отдаёт пустой каталог). HW-accel Edge off — вспомогательное. Подтверждено
 # живьём. Раньше тут стоял win81 (= порог DComp), что и давало чёрный экран.
 # Детали: docs/axon_installer_wine_diagnosis_2026_05_31.md, раздел «КОРЕНЬ ПЕРЕУСТАНОВЛЕН».
-# Носитель ключевого флага --disable-gpu-process-crash-limit. Пишется в реестр
-# (HKCU\Environment), чтобы фикс действовал при ЛЮБОМ запуске Axon (меню Wine,
-# protocol-handler RazerAxon:, GUI), а не только при запуске через razer-axon.sh.
-# Без crash-limit browser-процесс под Wine выходит с BrowserProcessExited (~16с)
-# после первых крашей viz на DCompositionCreateDevice E_NOTIMPL → пустое окно.
-WV2_BROWSER_ARGS="--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer --disable-gpu-sandbox --disable-gpu-process-crash-limit --disable-features=RendererCodeIntegrity --disable-crash-reporter --disable-renderer-backgrounding --disable-background-timer-throttling"
+# Вспомогательные флаги (настоящий фикс — win7 для msedgewebview2.exe выше).
+# Пишутся в реестр (HKCU\Environment), чтобы действовать при ЛЮБОМ запуске Axon
+# (меню Wine, protocol-handler RazerAxon:, GUI), а не только через razer-axon.sh.
+# Флаг --disable-gpu-process-crash-limit УБРАН как избыточный при win7 (он лишь
+# маскировал краш-цикл DComp, а win7 устраняет его в корне).
+WV2_BROWSER_ARGS="--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer --disable-gpu-sandbox --disable-features=RendererCodeIntegrity --disable-crash-reporter --disable-renderer-backgrounding --disable-background-timer-throttling"
 
 apply_webview2_gpu_fix() {
-    log "Реестр: HW-ускорение Edge off + win7 рендереру + env crash-limit (GPU-fix для всех запусков)"
+    log "Реестр: HW-ускорение Edge off + win7 рендереру + env-флаги (GPU-fix для всех запусков)"
     local reg; reg="$(mktemp --suffix=.reg)"
     cat > "$reg" <<REGEOF
 REGEDIT4
@@ -282,8 +282,8 @@ REGEOF
     rm -f "$reg"
     kill_wineserver
     if grep -aiq '"HardwareAccelerationModeEnabled"=dword:00000000' "$WINEPREFIX/system.reg" 2>/dev/null \
-       && grep -aiq 'disable-gpu-process-crash-limit' "$WINEPREFIX/user.reg" 2>/dev/null; then
-        log "GPU-fix применён (HW-accel=0 + env crash-limit в реестре)"
+       && grep -aiq 'WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS' "$WINEPREFIX/user.reg" 2>/dev/null; then
+        log "GPU-fix применён (HW-accel=0 + env-флаги в реестре)"
     else
         warn "GPU-fix НЕ подтверждён в реестре — WebView2 может циклически крашить"
     fi
