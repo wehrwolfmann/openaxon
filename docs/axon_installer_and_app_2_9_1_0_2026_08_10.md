@@ -299,29 +299,159 @@ post(`${REQUEST_URL}/${API_VERSION}/login`, {token, is_guest, uuid})
 То есть база `https://axon-api.razer.com/v1` и вся схема входа те же, что мы реализовали.
 Меняется только значение `X-Version`.
 
-### Дельта по эндпойнтам
+### Дельта по эндпойнтам [ДЕКОМП по бандлу, уточнено]
 
-Из бандла извлечено 184 строковых пути. Пропавших относительно `docs/axon-api.md` нет
-(разошлись только шаблоны вида `/wallpaper/vote/{type}` против префикса `/wallpaper/vote/`).
-Новые (не описаны у нас), сгруппировано:
+> ⚠️ **Правка первой редакции.** В первом заходе список «новых эндпойнтов» был снят
+> механическим `grep` по строкам вида `"/что-то"` и получился завышенным: туда попали
+> клиентские маршруты React Router и мусор сторонних библиотек. Ниже — разбор с
+> проверкой места вызова. Считать верной эту редакцию.
 
-* **Конкурсы/лидерборды/ежедневки**: `/contest`, `/contest/award/detail`, `/challenge`,
-  `/dailychallenge/list`, `/dailychallenge/staytunedbadges`, `/leaderboard`,
-  `/explore/leaderboard`, `/explore/dailychallenge`, `/compaigns`, `/compaigns/daily`,
-  `/compaigns/leaderboard`, `/campaign/code`
-* **Сообщество/доски**: `/explore/board`, `/hall`, `/hall/all`, `/hall/follow`,
-  `/hall/liked`, `/hall/personal`, `/feed/messages/pending`
-* **Плейлисты**: `/playlist`, `/playlist/followed`, `/playlist/joined`
-* **Реклама как источник валюты**: `/task/ads`, `/task/adsid`, `/task/ads/claim`
-* **Монетизация/рефералы**: `/silver/detail`, `/redeem/bycode`, `/wallpaper/redeem/bycode`,
-  `/referral/redeem`, `/promote/info`
-* **Прочее**: `/system/setting`, `/artists`, `/collections`, `/compilations`,
-  `/spotlight/index/carousel`, `/spotlight/index/category`, `/browse`, `/create`,
-  `/properties`
+Сырьё: `paths_262.txt` (144 пути, витрина 2.6.2.0) и `paths_291.txt` (184 пути,
+витрина 2.9.1.0). Арифметика «184 − 144 = 40 новых» обманчива: на самом деле
+**добавилось 47 строк и исчезло 7**.
+
+#### Как отличить эндпойнт от маршрута
+
+В бандле все обращения к API строятся ровно одним шаблоном, поэтому признак железный:
+
+```js
+axios.get("".concat(i.REQUEST_URL, "/").concat(l["default"], "/explore/board"), t)
+//          ^ REQUEST_URL = "" (same-origin)  ^ l["default"] = "v1"
+```
+
+Клиентские же маршруты лежат в таблице роутера и в перечне навигации:
+
+```js
+{path:"/browse", key:"browse", component:r["default"]}
+var q={DISCOVER:0,MARKET:1,COLLECTION:2,COMPILATIONS:3,…,AI_UPDATE:32}; e.NAV=q;
+var Q=["/","/browse","/collections","/compilations","/myWallPaper","/myCreateWallPaper",
+       "/create","/createHtml","/createAI","/myWorkshop","/compaigns",
+       "/compaigns/contestDetail","/hall","/hall/follow","/hall/liked","/hall/personal",
+       "/createAINew","/followSeries","/followArtist","/followSeriesDetail",
+       "/followArtistDetail","/artists","/compaigns/leaderboard","/playlist",
+       "/playlist/joined","/playlist/followed","/communityAlbums","/hall/all",
+       "/compaigns/daily","/leaderboard","/challenge","/compaigns/currentContest",
+       "/aiUpdate"];
+```
+
+Каждый из 47 «новых» путей проверен на наличие места вызова через `REQUEST_URL`.
+
+#### Разбор 47 добавившихся строк
+
+**1. Настоящие новые эндпойнты API — 17.** У всех подтверждён вызов через `REQUEST_URL`;
+в скобках — имя функции клиента и метод.
+
+*Витрина и каталог (4)*
+
+| Путь | Метод | Функция | Смысл |
+|---|---|---|---|
+| `/spotlight/index/carousel` | GET | `…ightCarousel` | карусель главной, отделена от `/spotlight/index` |
+| `/spotlight/index/category` | GET | `…ightCategory` | плитки категорий главной |
+| `/promote/info` | GET | `…annerSetting` | настройки промо-баннера |
+| `/system/setting` | GET | `…(keys)` | пакетное чтение серверных настроек по списку ключей |
+
+*Кампании, конкурсы, соревнования (5)*
+
+| Путь | Метод | Функция | Смысл |
+|---|---|---|---|
+| `/campaign/code` | GET | `…(wallpaper_id)` | код участия кампании по обоям |
+| `/contest/award/detail` | GET | `…(award_id)` | карточка одной награды (было только `/contest/award/list`) |
+| `/explore/dailychallenge` | GET | `…ilyChallenge` | блок ежедневки на «Explore» |
+| `/explore/leaderboard` | GET | `…eLeaderboard` | блок лидерборда на «Explore» |
+| `/explore/board` | GET | `ExploreBoard` | блок досок сообщества на «Explore» |
+
+Обрати внимание: `/explore/*` — это **виджеты одной страницы**, а не отдельные разделы;
+сами разделы (`/leaderboard`, `/challenge`, `/hall`) — маршруты, см. пункт 2.
+
+*Экономика: реклама как валюта (3) — новая механика*
+
+| Путь | Метод | Функция | Смысл |
+|---|---|---|---|
+| `/task/ads` | GET | `…AdRewardsInfo` | список рекламных заданий и награда за них |
+| `/task/adsid` | GET | `…imRewardToken` | токен на получение награды за просмотр |
+| `/task/ads/claim` | POST | `…(ads_task_id)` | забрать награду за просмотренную рекламу |
+
+Это стыкуется с новым тегом `<script src="https://ced.sascdn.com/tag/4064/smart.js">`
+(Smart AdServer) и доменом `www18.smartadserver.com` в бандле: в 2.9 за просмотр рекламы
+дают внутреннюю валюту (silver).
+
+*Погашение кодов и рефералы (4)*
+
+| Путь | Метод | Функция | Смысл |
+|---|---|---|---|
+| `/redeem/bycode` | POST | `…emByCodeNew` | новый общий обмен кода (суффикс `New` — прежний `/wallpaper/redeem/bycode` оставлен) |
+| `/wallpaper/redeem/bycode` | POST | `…edeemByCode` | старый обмен кода на обои |
+| `/referral/redeem` | POST | `…(code)` | реферальный код |
+| `/silver/detail` | GET | `…SivlerDetail` | выписка по внутренней валюте (опечатка в имени — их) |
+
+*Лента (1)*
+
+| Путь | Метод | Функция | Смысл |
+|---|---|---|---|
+| `/feed/messages/pending` | GET | `getUnReadNum` | счётчик непрочитанного (раньше считали из `/feed/messages`) |
+
+**2. Не эндпойнты, а маршруты React Router — 19.** Ни у одного нет вызова через
+`REQUEST_URL`; все присутствуют в таблице роутера и/или в массиве `Q` навигации:
+
+```
+/browse  /collections  /compilations  /create  /artists
+/hall  /hall/all  /hall/follow  /hall/liked  /hall/personal
+/playlist  /playlist/followed  /playlist/joined
+/leaderboard  /challenge  /contest
+/compaigns  /compaigns/daily  /compaigns/leaderboard
+```
+
+`compaigns` — опечатка Razer, живёт с самого начала. В бандле есть
+`<Redirect from="/compaigns/leaderboard" to="/leaderboard" exact>`, то есть раздел
+кампаний как раз распиливают на отдельные экраны. Появление этих строк в 2.9 означает
+**новые экраны UI**, а не новые вызовы сервера — данные они берут старыми
+`/hall/*`-подобными эндпойнтами (`/board/list`, `/leaderboard/list`, `/dailychallenge/list`).
+
+**3. Мусор экстрактора — 7.** Пять — указатели JSON Schema из библиотеки валидации AJV
+(`errSchemaPath + "/else"`, `"/then"`, `"/type"`, `"/required"`, `"/properties"`), две —
+UI-счётчики длины текста: `"/2000"` (лимит описания обоев) и `"/300"` (лимит краткого
+описания). К API отношения не имеют, но лимиты полей полезно знать.
+
+**4. Не новые, изменилась форма записи — 4.** Клиент склеивает суффикс из аргумента, и
+экстрактор 2.9 обрезал плейсхолдер:
+
+```js
+axios.post(`${REQUEST_URL}/v1/wallpaper/favorite/${t.type}`, t)   // type = add | cancel
+axios.post(`${REQUEST_URL}/v1/wallpaper/vote/${t.type}`, t)
+```
+
+| В 2.6.2.0 | В 2.9.1.0 | Что на деле |
+|---|---|---|
+| `/artist/follow/{type}` | `/artist/follow/` | без изменений |
+| `/collection/follow/{type}` | `/collection/follow/` | без изменений |
+| `/wallpaper/favorite/{type}`, `/wallpaper/favorite/add`, `/wallpaper/favorite/cancel` | `/wallpaper/favorite/` | без изменений |
+| `/wallpaper/vote/{type}` | `/wallpaper/vote/` | без изменений |
+
+#### Разбор 7 исчезнувших строк
+
+Шесть — обратная сторона пункта 4 выше (`/artist/follow/{type}`, `/collection/follow/{type}`,
+`/wallpaper/favorite/{type}`, `/wallpaper/favorite/add`, `/wallpaper/favorite/cancel`,
+`/wallpaper/vote/{type}`). **По-настоящему исчез ровно один: `/generate/downloaded`** —
+его роль забрали `/wallpaper/downloaded` и `/wallpaper/generate/list`, оба на месте.
+
+#### Итог
+
+**Ни один эндпойнт, существовавший в 2.6.2.0, не удалён и не переименован** (кроме
+`/generate/downloaded`, которым мы не пользуемся). Все 17 новых — **чистые добавления**
+поверх прежней поверхности API.
 
 Новые внешние домены в бандле: `https://www18.smartadserver.com`, `https://cdn.leonardo.ai`,
 `https://leonardo.ai`, `https://hidreamai.com`, `https://gold.razer.com` — то есть у
 генерации добавились сторонние модели, а у экономики — рекламные задания.
+
+#### Сверка с майскими заметками
+
+* `docs/axon-api.md` (май, 2.6.2.0) описывает базу, вход, заголовки и рабочие разделы
+  каталога/генерации — **всё это подтвердилось в 2.9.1.0 без правок**.
+* `docs/axon_ui_features_full_inventory_2026_05_31.md` — инвентарь экранов; 19 маршрутов
+  из пункта 2 это его прямое продолжение (новые экраны: `/browse`, `/collections`,
+  `/compilations`, `/artists`, `/playlist*`, `/hall/*`, `/leaderboard`, `/challenge`,
+  `/contest`, `/compaigns*`). Инвентарь стоит дополнить, но на порт это не влияет.
 
 ---
 
