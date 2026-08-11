@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Razer Axon Taskbar Fix
+Exec=/home/alexander/.local/bin/razer-axon-taskbar-fix.sh
+Hidden=false
+X-KDE-autostart-phase=2
