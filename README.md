@@ -38,7 +38,7 @@
 
 ### Обязательные
 
-- **Wine** (проверено с Wine 9.x / 10.x)
+- **Wine** (проверено с Wine 9.x / 10.x; установка Axon 2.9.1.0 целиком — на Wine 11.15)
 - **Python 3.10+**
 - **PyGObject** с GTK4, libadwaita и WebKit2
 - **xdotool**, **xprop** (для фикса панели задач на X11)
@@ -455,13 +455,22 @@ razer-token-inject.py     # Инжектировать
 ```
 
 ### Razer Central Service не запускается
-```bash
-# Проверить статус
-wine sc query RazerCentralService
 
-# Перезапустить Wine (сервис стартует автоматически)
-wineboot
+Служба зарегистрирована установщиком Razer под именем `RzActionSvc`
+(имя `RazerCentralService` не существует — по нему `sc` ответит «служба не найдена»):
+
+```bash
+# Проверить состояние
+wine sc query RzActionSvc          # ожидаем STATE : 4  RUNNING
+
+# Поднять вручную. wineserver -p обязателен: служба живёт ровно столько,
+# сколько живёт сеанс Wine, и без него гаснет через несколько секунд.
+wineserver -p
+wine sc start RzActionSvc
 ```
+
+Если Axon запускается, но **окна нет вообще** — почти всегда причина именно в этом:
+`RazerAxon.exe` не создаёт окно, пока не отработает вход через Razer Central.
 
 ### Кириллица в трее отображается квадратиками
 ```bash
