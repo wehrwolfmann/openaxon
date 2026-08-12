@@ -184,6 +184,17 @@ main() {
         exit 0
     fi
 
+    # Поднять службу Razer Central. Без неё RazerAxon.exe висит на TryLoginAsync
+    # и НЕ создаёт окна вообще (замер: docs/установка_под_wine_2_9_1_0.md, заход 9).
+    # Служба зовётся RzActionSvc — так её регистрирует собственный установщик Razer.
+    # wineserver -p держит сеанс открытым: служба живёт ровно столько, сколько сеанс.
+    if [ -f "$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Services/Razer Central/RazerCentralService.exe" ]; then
+        wineserver -p 2>/dev/null
+        WINEDEBUG=-all wine sc start RzActionSvc >/dev/null 2>&1
+    else
+        warn "Razer Central не установлен — окно Axon не появится. Поставьте: scripts/установить-axon.sh"
+    fi
+
     # Check and update patched DLL
     check_patch
 
