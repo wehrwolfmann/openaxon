@@ -8,6 +8,7 @@
 
 | Файл | Описание |
 |------|----------|
+| `scripts/установить-axon.sh` | **Установка одной командой**: префикс, .NET, Razer Central, Axon, WebView2, отрисовка, ярлык |
 | `razer-login.py` | Авторизация в Razer ID |
 | `razer-token-inject.py` | Инжекция токена в Razer Central Service (работа без патча DLL) |
 | `razer-token-refresh.sh` | Тихое авто-обновление токена (для systemd `--user` таймера, см. `systemd/`) |
