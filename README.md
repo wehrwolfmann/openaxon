@@ -105,38 +105,75 @@ environment.systemPackages = with pkgs; [
 
 ## Установка
 
-### 1. Установка Razer Axon через Wine
+### Самый простой способ — одна команда
 
 ```bash
-# Скачать установщик
-wget -O /tmp/RazerAxonInstaller.exe "https://rzr.to/axon"
-
-# Установить
-wine /tmp/RazerAxonInstaller.exe
+./scripts/установить-axon.sh
 ```
 
-Следуйте установщику. Путь по умолчанию: `C:\Program Files (x86)\Razer\Razer Axon`.
+Скрипт неинтерактивный: сам создаёт отдельный префикс Wine, ставит .NET Framework 4.8,
+Razer Central, сам Razer Axon и движок интерфейса WebView2, настраивает отрисовку,
+делает команду `razer-axon` и пункт «Razer Axon» в меню программ, а в конце проверяет
+десять признаков того, что всё встало. Занимает 25-40 минут и качает около 1 ГБ.
+Прерванный запуск можно повторить — сделанные шаги пропускаются.
 
-### 2. Регистрация Razer Central Service
+При первом запуске откроется окно Razer Central. **Учётная запись Razer не нужна** —
+достаточно нажать «Продолжить в качестве гостя», и каталог обоев откроется целиком.
 
-Razer Axon использует Razer Central Service для авторизации. Зарегистрируйте его как Wine-сервис (один раз):
+Разбор каждого шага и замеры, на которых он основан, — в
+[`docs/установка_под_wine_2_9_1_0.md`](docs/установка_под_wine_2_9_1_0.md).
+
+### Вручную, если хочется контролировать каждый шаг
 
 ```bash
-wine sc create RazerCentralService \
-  binPath= "C:\Program Files (x86)\Razer\Razer Services\Razer Central\RazerCentralService.exe" \
-  start= auto
+export WINEPREFIX="$HOME/.local/share/openaxon/prefix"
+WINEARCH=win64 wineboot --init                 # свежий префикс: уже win10, build 19045
+winetricks -q dotnet48                         # ОБЯЗАТЕЛЬНО до Axon (см. ниже)
+wine winecfg -v win10                          # dotnet48 оставляет после себя build 7601
+wine RazerCentral_v7.23.0.1220.exe /silent     # тихо ставится только при настоящем .NET
+wine RazerAxonSetup_2.9.1.0.exe /SP- /VERYSILENT \
+     '/DIR=C:\Program Files (x86)\Razer\Razer Axon' /SUPPRESSMSGBOXES /NORESTART
 ```
 
-Сервис будет запускаться автоматически при старте Wine.
+Три места, где легко ошибиться:
 
-### 3. Установка скриптов
+* `dotnet48` **до** Axon. Установка Axon оставляет в префиксе вечный
+  `MicrosoftEdgeUpdate.exe /c`, а `winetricks` на каждом шаге ждёт `wineserver -w` —
+  то есть завершения всех процессов префикса. После Axon любой verb winetricks
+  встаёт намертво.
+* `winecfg -v win10` **после** `dotnet48`: тот подменяет версию Windows на 7, а
+  Inno-установщик Axon на семёрке отказывается работать (`MinVersion`).
+* ключ подавления окон — `/SUPPRESSMSGBOXES`, с двумя `p`. В своём манифесте Razer
+  опечатался (`/SUPRESSMSGBOXES`), такой ключ Inno молча игнорирует.
+
+### Служба Razer Central
+
+Регистрировать её вручную **не нужно** — установщик Razer Central заводит её сам, причём
+под именем `RzActionSvc` (а не `RazerCentralService`, как ошибочно указывалось здесь
+раньше):
+
+```bash
+wine sc query RzActionSvc     # → STATE : 4  RUNNING
+```
+
+⚠️ Служба живёт ровно столько, сколько живёт `wineserver` префикса. Поэтому поднимать её
+надо в том же сеансе, в котором запускается Axon — именно так и делает создаваемая
+скриптом команда `razer-axon`:
+
+```bash
+wineserver -p                 # держим сеанс открытым
+wine sc start RzActionSvc
+wine RazerAxon.exe -showui
+```
+
+### Установка вспомогательных скриптов
 
 ```bash
 cp razer-axon.sh razer-login.py razer-token-inject.py razer-axon-decrypt.py ~/.local/bin/
 chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-token-inject.py ~/.local/bin/razer-axon-decrypt.py
 ```
 
-### 4. Вход в Razer ID
+### Вход в Razer ID (только если нужен свой аккаунт)
 
 ```bash
 # Получить токен
@@ -150,7 +187,7 @@ razer-token-inject.py
 
 `razer-token-inject.py` передаёт токен в Razer Central Service через named pipe IPC. При первом запуске автоматически собирает .NET-хелпер (требуется `dotnet` SDK 6.0+).
 
-### 5. Запуск Razer Axon
+### Запуск
 
 ```bash
 razer-axon.sh
