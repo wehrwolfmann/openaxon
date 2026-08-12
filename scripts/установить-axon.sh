@@ -436,6 +436,17 @@ export LIBGL_ALWAYS_SOFTWARE=1
 export GALLIUM_DRIVER=llvmpipe
 export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="$BROWSER_FLAGS"
 
+# «razer-axon --стоп» — полностью выключить Axon и всё, что он поднял.
+# Обои — программа фоновая, сама она не выключается: закрытие окна её только
+# сворачивает. Гасим весь сеанс Wine этого отсека, чужие программы не трогая.
+case "\${1:-}" in
+    --стоп|--stop)
+        wineserver -k 2>/dev/null
+        echo "Razer Axon выключен."
+        exit 0
+        ;;
+esac
+
 # Держим сеанс Wine открытым: служба Razer Central живёт ровно столько,
 # сколько живёт сеанс, и без этого гаснет через несколько секунд.
 wineserver -p 2>/dev/null
@@ -543,6 +554,9 @@ verify() {
         echo "  «Продолжить в качестве гостя», и каталог обоев откроется целиком."
         echo
         echo "  Первое окно наполняется не сразу: дайте ему полминуты."
+        echo
+        echo "  Выключить совсем (обои — программа фоновая, закрытие окна её"
+        echo "  только сворачивает):  razer-axon --стоп"
         echo
         echo "  Удалить всё:"
         echo "    rm -rf \"$WINEPREFIX\" \\"
