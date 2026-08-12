@@ -97,7 +97,9 @@ require() {
 prefix_pids() {
     local pid owner
     for pid in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
-        owner="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null | sed -n 's/^WINEPREFIX=//p')"
+        # Чужие процессы читать не дают — это нормально, молча пропускаем.
+        [ -r "/proc/$pid/environ" ] || continue
+        owner="$(tr '\0' '\n' 2>/dev/null < "/proc/$pid/environ" | sed -n 's/^WINEPREFIX=//p')"
         [ "$owner" = "$WINEPREFIX" ] && echo "$pid"
     done
     return 0
