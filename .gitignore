@@ -4,3 +4,4 @@ __pycache__/
 patch/src/bin/
 patch/src/obj/
 patch/src/ref/
+.work-auth/
