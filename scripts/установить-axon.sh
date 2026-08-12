@@ -488,6 +488,26 @@ wineserver -p 2>/dev/null
 # Поднимаем службу Razer Central. Если она уже работает — Wine просто скажет
 # об этом и ничего не сломается.
 wine sc start RzActionSvc >/dev/null 2>&1
+sleep 6
+
+# Окно входа рисует Razer Central своим встроенным браузером. Служба запускает его
+# БЕЗ ключа --no-sandbox, а под Wine песочница Chromium не работает: подпроцессы
+# отрисовки не стартуют вовсе, и окно остаётся белым. Поэтому запущенный службой
+# экземпляр закрываем и поднимаем свой, с нужными ключами.
+CENTRAL_DIR="\$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Services/Razer Central"
+if [ -d "\$CENTRAL_DIR" ]; then
+    for pid in \$(ls /proc 2>/dev/null | grep -E '^[0-9]+\$'); do
+        [ -r "/proc/\$pid/environ" ] || continue
+        [ "\$(tr '\\0' '\\n' 2>/dev/null < "/proc/\$pid/environ" | sed -n 's/^WINEPREFIX=//p')" = "\$WINEPREFIX" ] || continue
+        case "\$(tr '\\0' ' ' 2>/dev/null < "/proc/\$pid/cmdline")" in
+            *"Razer Central.exe"*|*CefSharp.BrowserSubprocess.exe*) kill -TERM "\$pid" 2>/dev/null ;;
+        esac
+    done
+    sleep 2
+    ( cd "\$CENTRAL_DIR" && setsid wine "Razer Central.exe" /Client \\
+        --no-sandbox --disable-gpu --disable-gpu-compositing \\
+        --disable-features=RendererCodeIntegrity >/dev/null 2>&1 & )
+fi
 
 cd "\$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon" || exit 1
 exec wine RazerAxon.exe -showui "\$@"
