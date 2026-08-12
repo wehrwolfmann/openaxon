@@ -115,6 +115,27 @@ wait_quiet() {
     return 1
 }
 
+# Программы, которые в отсеке живут постоянно и завершения которых ждать
+# бессмысленно: служебная обвязка Wine, служба Razer Central и обновлятор Edge —
+# последний не завершается вообще никогда (заход 8 журнала).
+BACKGROUND_NOISE='wineserver|services\.exe|winedevice\.exe|plugplay\.exe|svchost\.exe|rpcss\.exe|explorer\.exe|MicrosoftEdgeUpdate\.exe|RazerCentralService\.exe|conhost\.exe|start\.exe'
+
+# Дождаться, пока установщик доработает. В отличие от wait_quiet не ждёт вечных
+# фоновых программ — иначе каждый шаг зря простаивал бы до самого предела.
+wait_installer_done() {
+    local limit="${1:-300}" spent=0 pid busy
+    while [ "$spent" -lt "$limit" ]; do
+        busy=0
+        for pid in $(prefix_pids); do
+            grep -qzE "$BACKGROUND_NOISE" "/proc/$pid/cmdline" 2>/dev/null && continue
+            busy=1; break
+        done
+        [ "$busy" = 0 ] && return 0
+        sleep 5; spent=$((spent + 5))
+    done
+    return 1
+}
+
 # Аккуратно закрыть все программы нашего отсека — по номерам, не по именам.
 close_prefix() {
     local pid
@@ -319,7 +340,7 @@ install_central() {
     fi
     step "Ставлю Razer Central (нужен Axon для входа) — около 3 минут"
     timeout 900 wine "$CENTRAL_SETUP" /silent >/dev/null 2>&1
-    wait_quiet 180
+    wait_installer_done 180
     close_prefix
     has_central || abort "Razer Central не установился. Запустите скрипт ещё раз."
     note "Razer Central установлен"
@@ -352,7 +373,7 @@ install_axon() {
         sleep 15; spent=$((spent + 15))
         if has_axon && [ -d "$(webview_dir)/Application" ]; then break; fi
     done
-    wait_quiet 300
+    wait_installer_done 300
     close_prefix
     has_axon || abort "Razer Axon не установился. Запустите скрипт ещё раз."
     note "Razer Axon установлен"
@@ -483,7 +504,7 @@ Comment[en]=Live desktop wallpapers by Razer
 Exec=$launcher
 Icon=${icon:-razer-axon}
 Terminal=false
-Categories=Graphics;Settings;DesktopSettings;
+Categories=Settings;DesktopSettings;
 Keywords=обои;живые обои;фон;рабочий стол;Razer;Axon;wallpaper;
 StartupWMClass=razeraxon.exe
 DESKTOP
