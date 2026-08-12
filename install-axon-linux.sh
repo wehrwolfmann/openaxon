@@ -332,10 +332,11 @@ obtain_manifest() {
         sleep 5
         if [ -s "$(manifest)" ] && grep -aiq 'RazerAxonSetup' "$(manifest)" 2>/dev/null; then ok=1; break; fi
     done
-    # Глушим bootstrap и его WPF-движок (он бесполезен дальше и крашится в UI)
+    # Глушим bootstrap и его WPF-движок (он бесполезен дальше и крашится в UI).
+    # ВАЖНО: только свой процесс по номеру и весь СВОЙ префикс через wineserver -k.
+    # Гасить по имени (pkill -f RazerInstaller) нельзя: под тем же именем может
+    # работать чужой префикс на этой же машине, и мы убьём чужую программу.
     kill "$pid" 2>/dev/null || true
-    pkill -f RazerInstaller 2>/dev/null || true
-    pkill -f RazerAxonInstaller 2>/dev/null || true
     kill_wineserver
     [ "$ok" = 1 ] || die "Манифест с Axon не получен. Проверьте сеть к *.razerapi.com и осверсию win10."
     log "Манифест каталога получен (содержит Razer Axon)"
