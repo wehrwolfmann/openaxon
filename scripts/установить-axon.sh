@@ -128,9 +128,10 @@ wait_quiet() {
 }
 
 # Программы, которые в отсеке живут постоянно и завершения которых ждать
-# бессмысленно: служебная обвязка Wine, служба Razer Central и обновлятор Edge —
-# последний не завершается вообще никогда (заход 8 журнала).
-BACKGROUND_NOISE='wineserver|services\.exe|winedevice\.exe|plugplay\.exe|svchost\.exe|rpcss\.exe|explorer\.exe|MicrosoftEdgeUpdate\.exe|RazerCentralService\.exe|conhost\.exe|start\.exe'
+# бессмысленно: служебная обвязка Wine, служба Razer Central, фоновый компилятор
+# .NET (mscorsvw/ngen — остаётся висеть после установки .NET) и обновлятор Edge,
+# который не завершается вообще никогда (заход 8 журнала).
+BACKGROUND_NOISE='wineserver|services\.exe|winedevice\.exe|plugplay\.exe|svchost\.exe|rpcss\.exe|explorer\.exe|MicrosoftEdgeUpdate\.exe|RazerCentralService\.exe|conhost\.exe|start\.exe|mscorsvw\.exe|ngen\.exe|ngentask\.exe'
 
 # Дождаться, пока установщик доработает. В отличие от wait_quiet не ждёт вечных
 # фоновых программ — иначе каждый шаг зря простаивал бы до самого предела.
