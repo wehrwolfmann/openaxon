@@ -412,6 +412,13 @@ install_axon() {
 #
 #  У Axon браузер называется msedgewebview2.exe, у Razer Central —
 #  CefSharp.BrowserSubprocess.exe. Настраивать нужно оба.
+#
+#  Отдельная беда — контекстное меню значка в трее. Само окно Razer Central
+#  нарисовано браузером, а вот меню значка рисует уже не браузер, а WPF —
+#  оконная библиотека .NET. WPF по умолчанию рисует через видеокарту (Direct3D 9),
+#  под Wine эта дорога не работает, и окно меню остаётся сплошным чёрным
+#  прямоугольником: щелчок правой кнопкой вроде бы «ничего не даёт».
+#  Лечится штатным ключом самого WPF — он умеет рисовать силами процессора.
 # =============================================================================
 
 BROWSER_FLAGS='--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer --disable-gpu-sandbox --disable-features=RendererCodeIntegrity --disable-crash-reporter --disable-renderer-backgrounding --disable-background-timer-throttling'
@@ -439,6 +446,9 @@ REGEDIT4
 
 [HKEY_CURRENT_USER\\Environment]
 "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"="$BROWSER_FLAGS"
+
+[HKEY_CURRENT_USER\\Software\\Microsoft\\Avalon.Graphics]
+"DisableHWAcceleration"=dword:00000001
 REG
     timeout 120 wine regedit "$reg" >/dev/null 2>&1
     rm -f "$reg"
@@ -446,6 +456,7 @@ REG
     local ok=1
     grep -aqF 'AppDefaults\\msedgewebview2.exe'             "$WINEPREFIX/user.reg" 2>/dev/null || ok=0
     grep -aqF 'AppDefaults\\CefSharp.BrowserSubprocess.exe' "$WINEPREFIX/user.reg" 2>/dev/null || ok=0
+    grep -aqF 'Microsoft\\Avalon.Graphics'                  "$WINEPREFIX/user.reg" 2>/dev/null || ok=0
     if [ "$ok" = 1 ]; then
         note "Отрисовка настроена"
     else
@@ -596,6 +607,7 @@ verify() {
     check "служба Razer Central зарегистрирована" in_registry system.reg 'RzActionSvc'
     check "отрисовка настроена для Axon"          in_registry user.reg 'AppDefaults\\msedgewebview2.exe'
     check "отрисовка настроена для Razer Central" in_registry user.reg 'AppDefaults\\CefSharp.BrowserSubprocess.exe'
+    check "меню значка в трее рисуется"           in_registry user.reg 'Microsoft\\Avalon.Graphics'
     check "команда razer-axon создана"            test -x "$HOME/.local/bin/razer-axon"
     check "пункт меню создан"                     test -f "$HOME/.local/share/applications/razer-axon.desktop"
 
