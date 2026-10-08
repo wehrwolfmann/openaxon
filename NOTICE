@@ -1,0 +1,39 @@
+OpenAxon
+Copyright 2026 Alexander Berg ("Wehrwolfmann")
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE),
+except for the files listed below.
+
+OpenAxon is an independent project. It is not affiliated with, endorsed by or
+sponsored by Razer Inc. "Razer", "Razer Axon" and "Razer Synapse" are
+trademarks of Razer Inc.
+
+Third-party files not covered by this license
+---------------------------------------------
+
+  * patch/RazerAxon.UserManager.dll
+    A modified file of Razer Inc. (from Razer Axon). All rights belong to
+    Razer Inc. It is NOT licensed under the Apache License 2.0.
+
+  * patch/src/
+    Source reconstructed from Razer Inc.'s RazerAxon.UserManager.dll and then
+    modified; it is the source of the patched DLL above. The code that comes
+    from Razer remains the property of Razer Inc. and is NOT licensed under the
+    Apache License 2.0; only the maintainer's own changes are offered under it.
+
+  * axon.png
+    The Razer Axon application icon, property of Razer Inc. NOT licensed under
+    the Apache License 2.0.
+
+Patches to third-party projects
+-------------------------------
+
+  * patch/innoextract-inno67-loader-rev2.patch
+    A patch for innoextract (https://constexpr.org/innoextract/, zlib license)
+    that adds support for the Inno Setup 6.7 loader revision 2. The changes in
+    the patch are original work under the Apache License 2.0; the surrounding
+    context lines quoted from innoextract remain under innoextract's license.
+
+The reverse-engineering notes in docs/ may quote short excerpts of Razer
+software and protocols for interoperability; those excerpts remain the
+property of their owners.

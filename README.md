@@ -501,4 +501,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose a change.
 
 ## License
 
-MIT
+**Apache-2.0** — see [LICENSE](LICENSE). Some files are third-party and are not covered by it
+(the patched Razer DLL and its reconstructed source, the Axon icon) — see [NOTICE](NOTICE).
