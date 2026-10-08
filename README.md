@@ -494,6 +494,11 @@ The launch script fixes this automatically. If the problem persists, make sure `
 ### Wallpaper decryption doesn't work
 Make sure `7z` or `unzip` is installed and supports ZipCrypto.
 
+## Contributing
+
+Contributions are accepted under the [Contributor License Agreement](CLA.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose a change.
+
 ## License
 
 MIT
