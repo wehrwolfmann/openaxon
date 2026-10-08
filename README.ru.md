@@ -1,0 +1,498 @@
+[English](README.md) | Русский
+
+# OpenAxon — Razer Axon на Linux
+
+Запуск [Razer Axon](https://www.razer.com/software/axon) на Linux через Wine — с поддержкой авторизации, фиксами панели задач и расшифровкой обоев. Включает нативный GTK4 клиент и полную документацию по реверс-инжинирингу протоколов Razer Axon.
+
+## Что входит в комплект
+
+### Скрипты
+
+| Файл | Описание |
+|------|----------|
+| `scripts/установить-axon.sh` | **Установка одной командой**: префикс, .NET, Razer Central, Axon, WebView2, отрисовка, ярлык |
+| `razer-login.py` | Авторизация в Razer ID |
+| `razer-token-inject.py` | Инжекция токена в Razer Central Service (работа без патча DLL) |
+| `razer-token-refresh.sh` | Тихое авто-обновление токена (для systemd `--user` таймера, см. `systemd/`) |
+| `razer-axon-gui.py` | Нативный GTK4/Adwaita клиент для Linux |
+| `openaxon-player.py` | Нативный wallpaper daemon (видео/статика, мультимонитор, эффекты) |
+| `razer-axon.sh` | Скрипт запуска оригинального Axon через Wine |
+| `razer-axon-decrypt.py` | Извлечение зашифрованных видео-обоев |
+| `razer-sync.py` | Синхронизация обоев с аккаунтом Razer |
+| `patch/RazerAxon.UserManager.dll` | Патченная DLL (устаревший метод, см. ниже) |
+
+### Документация реверс-инжиниринга
+
+Полная документация протоколов Razer Axon, извлечённая из 27 .NET DLL и JS-бандлов:
+
+| Документ | Описание |
+|----------|----------|
+| [`docs/razer-central-ipc.md`](docs/razer-central-ipc.md) | IPC протокол Razer Central — 4 сервиса, 137+ команд, wire format |
+| [`docs/axon-api.md`](docs/axon-api.md) | REST API — ~110 endpoints, HMAC-авторизация, менеджер загрузок |
+| [`docs/react-architecture.md`](docs/react-architecture.md) | React 18 frontend — 24 маршрута, state management, WebView2 мост |
+| [`docs/wallpaper-player.md`](docs/wallpaper-player.md) | Player pipe протокол — JSON команды, эффекты, мультимонитор |
+| [`docs/chroma-sdk.md`](docs/chroma-sdk.md) | Chroma RGB — REST API, .chroma формат, AI-генерация, LED maps |
+| [`docs/design-system.md`](docs/design-system.md) | CSS дизайн-система — цвета, шрифты, 13 групп компонентов |
+| [`docs/webview-host-objects.md`](docs/webview-host-objects.md) | JS↔C# мост — 6 host objects, 111 методов |
+| [`docs/utilities.md`](docs/utilities.md) | Logger, Environment, Notifications, Telemetry |
+| [`docs/reporter-screensaver.md`](docs/reporter-screensaver.md) | Analytics reporter и screensaver launcher |
+
+## Зависимости
+
+### Обязательные
+
+- **Wine** (проверено с Wine 9.x / 10.x; установка Axon 2.9.1.0 целиком — на Wine 11.15)
+- **Python 3.10+**
+- **PyGObject** с GTK4, libadwaita и WebKit2
+- **xdotool**, **xprop** (для фикса панели задач на X11)
+- **7z** или **unzip** (для расшифровки обоев)
+
+### Опциональные
+
+- **mpvpaper** — видео-обои на Wayland
+- **xwinwrap** + **mpv** — видео-обои на X11
+- **feh** — установка статичных обоев (fallback)
+
+### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S wine python-gobject gtk4 libadwaita webkit2gtk-4.1 xdotool xorg-xprop p7zip
+```
+
+### Ubuntu / Debian
+
+```bash
+sudo apt install wine python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-webkit2-4.1 xdotool x11-utils p7zip-full
+```
+
+### Fedora
+
+```bash
+sudo dnf install wine python3-gobject gtk4 libadwaita webkit2gtk4.1 xdotool xprop p7zip
+```
+
+### openSUSE
+
+```bash
+sudo zypper install wine python3-gobject gtk4 libadwaita webkit2gtk3-soup2-devel xdotool xprop p7zip
+```
+
+### Void Linux
+
+```bash
+sudo xbps-install wine python3-gobject gtk4 libadwaita webkit2gtk41 xdotool xprop p7zip
+```
+
+### Gentoo
+
+```bash
+sudo emerge app-emulation/wine dev-python/pygobject gui-libs/gtk:4 gui-libs/libadwaita net-libs/webkit-gtk x11-misc/xdotool x11-apps/xprop app-arch/p7zip
+```
+
+### NixOS
+
+```nix
+# configuration.nix или home-manager
+environment.systemPackages = with pkgs; [
+  wineWowPackages.stable
+  python3
+  python3Packages.pygobject3
+  gtk4
+  libadwaita
+  webkitgtk_4_1
+  xdotool
+  xorg.xprop
+  p7zip
+];
+```
+
+## Установка
+
+### Самый простой способ — одна команда
+
+```bash
+./scripts/установить-axon.sh
+```
+
+Скрипт неинтерактивный: сам создаёт отдельный префикс Wine, ставит .NET Framework 4.8,
+Razer Central, сам Razer Axon и движок интерфейса WebView2, настраивает отрисовку,
+делает команду `razer-axon` и пункт «Razer Axon» в меню программ, а в конце проверяет
+десять признаков того, что всё встало. Занимает 25-40 минут и качает около 1 ГБ.
+Прерванный запуск можно повторить — сделанные шаги пропускаются.
+
+При первом запуске откроется окно Razer Central. **Учётная запись Razer не нужна** —
+достаточно нажать «Продолжить в качестве гостя», и каталог обоев откроется целиком.
+
+Разбор каждого шага и замеры, на которых он основан, — в
+[`docs/установка_под_wine_2_9_1_0.md`](docs/установка_под_wine_2_9_1_0.md).
+
+### Вручную, если хочется контролировать каждый шаг
+
+```bash
+export WINEPREFIX="$HOME/.local/share/openaxon/prefix"
+WINEARCH=win64 wineboot --init                 # свежий префикс: уже win10, build 19045
+winetricks -q dotnet48                         # ОБЯЗАТЕЛЬНО до Axon (см. ниже)
+wine winecfg -v win10                          # dotnet48 оставляет после себя build 7601
+wine RazerCentral_v7.23.0.1220.exe /silent     # тихо ставится только при настоящем .NET
+wine RazerAxonSetup_2.9.1.0.exe /SP- /VERYSILENT \
+     '/DIR=C:\Program Files (x86)\Razer\Razer Axon' /SUPPRESSMSGBOXES /NORESTART
+```
+
+Три места, где легко ошибиться:
+
+* `dotnet48` **до** Axon. Установка Axon оставляет в префиксе вечный
+  `MicrosoftEdgeUpdate.exe /c`, а `winetricks` на каждом шаге ждёт `wineserver -w` —
+  то есть завершения всех процессов префикса. После Axon любой verb winetricks
+  встаёт намертво.
+* `winecfg -v win10` **после** `dotnet48`: тот подменяет версию Windows на 7, а
+  Inno-установщик Axon на семёрке отказывается работать (`MinVersion`).
+* ключ подавления окон — `/SUPPRESSMSGBOXES`, с двумя `p`. В своём манифесте Razer
+  опечатался (`/SUPRESSMSGBOXES`), такой ключ Inno молча игнорирует.
+
+### Служба Razer Central
+
+Регистрировать её вручную **не нужно** — установщик Razer Central заводит её сам, причём
+под именем `RzActionSvc` (а не `RazerCentralService`, как ошибочно указывалось здесь
+раньше):
+
+```bash
+wine sc query RzActionSvc     # → STATE : 4  RUNNING
+```
+
+⚠️ Служба живёт ровно столько, сколько живёт `wineserver` префикса. Поэтому поднимать её
+надо в том же сеансе, в котором запускается Axon — именно так и делает создаваемая
+скриптом команда `razer-axon`:
+
+```bash
+wineserver -p                 # держим сеанс открытым
+wine sc start RzActionSvc
+wine RazerAxon.exe -showui
+```
+
+### Установка вспомогательных скриптов
+
+```bash
+cp razer-axon.sh razer-login.py razer-token-inject.py razer-axon-decrypt.py ~/.local/bin/
+chmod +x ~/.local/bin/razer-axon.sh ~/.local/bin/razer-login.py ~/.local/bin/razer-token-inject.py ~/.local/bin/razer-axon-decrypt.py
+```
+
+### Вход в Razer ID (только если нужен свой аккаунт)
+
+```bash
+# Получить токен
+razer-login.py
+
+# Инжектировать в Razer Central Service
+razer-token-inject.py
+```
+
+`razer-login.py` открывает окно WebKit со страницей входа Razer ID. После авторизации скрипт перехватывает JWT-токен и сохраняет его.
+
+`razer-token-inject.py` передаёт токен в Razer Central Service через named pipe IPC. При первом запуске автоматически собирает .NET-хелпер (требуется `dotnet` SDK 6.0+).
+
+### Запуск
+
+```bash
+razer-axon.sh
+```
+
+> **Примечание:** Вы также можете войти напрямую через интерфейс Axon — нажмите «Вход» в окне приложения. Токен-инжектор нужен только если прямой вход не работает.
+
+### Альтернативный метод: патченная DLL (устаревший)
+
+Если метод с Razer Central Service не работает, можно заменить `RazerAxon.UserManager.dll` патченной версией:
+
+```bash
+AXON_DIR="$WINEPREFIX/drive_c/Program Files (x86)/Razer/Razer Axon"
+cp "$AXON_DIR/RazerAxon.UserManager.dll" "$AXON_DIR/RazerAxon.UserManager.dll.orig"
+cp patch/RazerAxon.UserManager.dll "$AXON_DIR/"
+```
+
+Этот метод убирает зависимость от Razer Central, но требует повторного применения после каждого обновления Axon.
+
+## Использование
+
+### Вход / обновление токена
+
+```bash
+razer-login.py            # Открыть окно входа
+razer-login.py --status   # Проверить статус текущего токена
+razer-token-inject.py     # Инжектировать токен в сервис
+razer-token-inject.py --status  # Проверить состояние
+```
+
+Токены истекают примерно через 24 часа. Обновить можно вручную (`razer-login.py`), но удобнее настроить **авто-обновление** (ниже).
+
+### Авто-обновление токена (без повторного входа)
+
+`razer-login.py --refresh` тихо получает новый токен по сохранённым session-cookie
+Razer ID — **без окна входа** — и только когда токен истекает в течение часа
+(иначе быстрый no-op). Пока жива сессия Razer ID, повторно вводить логин/пароль не нужно.
+
+`razer-token-refresh.sh` оборачивает это: вызывает `--refresh` и синхронизирует свежий
+токен в Wine-префикс (туда, откуда патч `RazerAxon.UserManager.dll` читает
+`wine_login_token.json`). Поставьте на systemd `--user` таймер (раз в 30 мин):
+
+```bash
+# Юниты в systemd/ ставят %h/Projects/openaxon/razer-token-refresh.sh —
+# поправьте ExecStart под свой путь, если репозиторий лежит иначе.
+cp systemd/razer-axon-token-refresh.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+# WebKit для silent-refresh нужен доступ к графической сессии:
+systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XAUTHORITY DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR
+systemctl --user enable --now razer-axon-token-refresh.timer
+```
+
+Когда session-cookie в итоге истекут (недели), таймер залогирует ошибку — тогда
+один раз войдите интерактивно (`razer-login.py`).
+
+### Запуск
+
+```bash
+razer-axon.sh             # Запустить Razer Axon
+```
+
+Скрипт запуска:
+- Устанавливает переменные окружения Wine для совместимости с WebView2
+- Если Axon уже запущен, активирует существующее окно
+- ~~Реактивно исправляет видимость в панели задач (снятие `WM_TRANSIENT_FOR`)~~ — обход устарел и удалён: на wine 11.15 с Plasma 6.7.4 снятие свойства записи в панели задач не возвращает (замер, заход 17)
+
+### WebView2: стабильность под Wine
+
+UI Razer Axon рендерится встроенным **WebView2** (msedgewebview2 / Chromium).
+Под Wine **GPU/Viz-процесс** Chromium падает на `CHECK()`/`__debugbreak()` при
+GPU-init (exit code `0x80000003` = `STATUS_BREAKPOINT`) и циклически
+перезапускается; исчерпав GPU-crash-лимит (~3-6 крашей подряд), browser-процесс
+**сознательно выходит** → Axon видит `CoreWebView2ProcessFailed` / причина
+`BrowserProcessExited` и закрывает окно UI. Главный процесс Axon при этом
+выживает. **Это НЕ Mojo IPC и НЕ авторизация** (прежняя гипотеза опровергнута,
+см. ниже).
+
+**Фикс (главный рычаг) — Windows 7 для рендерера, чтобы обойти DirectComposition:**
+`razer-axon.sh` и `install-axon-linux.sh` идемпотентно ставят в реестр префикса:
+- `Version=win7` для `msedgewebview2.exe` в `HKCU\Software\Wine\AppDefaults` —
+  **главное**. При Windows-версии ≥8.1 viz Chromium презентует кадр (даже
+  software-bitmap) через **DirectComposition** (`DCompositionCreateDevice`),
+  которого Wine не реализует (`E_NOTIMPL`/`0x80004001`) → CHECK → краш viz → кадр
+  не доходит до окна = **чёрный экран**. Под `win7` тот же `SoftwareOutputDevice`
+  идёт через **GDI BitBlt** (без DComp) и реально копирует пиксели в окно;
+- `HardwareAccelerationModeEnabled=0` в `HKLM/HKCU\Software\Policies\Microsoft\Edge`
+  и `...\Edge\WebView2` — вспомогательное (Edge не поднимает HW-GPU-процесс).
+
+> **Важно — два РАЗНЫХ рычага версии Windows:**
+> - `win7` ставится **ТОЛЬКО** подпроцессу-рендереру `msedgewebview2.exe`;
+> - `RazerAxon.exe` и **глобально префикс остаются `win10`** — иначе сервер Razer
+>   отдаёт пустой каталог (логин/контент не работают). См. `set_win10` в установщике.
+>
+> Источники фикса: WineHQ Bug 58921, winetricks #2226, CodeWeavers, Arch Forums.
+
+Доп. смягчения, которые применяет `razer-axon.sh`:
+
+1. **Evergreen-рантайм (по умолчанию).** Axon рендерит home через встроенный
+   evergreen WebView2 (Chromium **149**) — единственная конфигурация, где
+   `CreateCoreWebView2Environment` под Wine инициализируется. Fixed-version
+   (`INSTALL_WV2_FIXED=1`) **не рекомендуется** (см. ниже).
+2. **Software-only рендер.** `LIBGL_ALWAYS_SOFTWARE=1`, `GALLIUM_DRIVER=llvmpipe`,
+   Mesa-EGL — убирают шум NVIDIA EGL под XWayland.
+3. **Chromium-флаги** (`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`):
+   `--no-sandbox --disable-gpu --disable-gpu-compositing --disable-software-rasterizer
+   --disable-gpu-sandbox --disable-features=RendererCodeIntegrity
+   --disable-crash-reporter --disable-renderer-backgrounding
+   --disable-background-timer-throttling`.
+
+> **Статус (2026-06-12):** проверено живьём на Wine 11.10 + RTX 4070 (Wayland).
+> Корень переустановлен по stderr Chromium (`gpu_process_host.cc:1063 GPU process
+> exited unexpectedly: exit_code=-2147483645` = `0x80000003`, «has crashed N
+> time(s)»). В одном baseline-прогоне зафиксировано **12 спавнов gpu-process**.
+>
+> **До фикса (baseline):** GPU-процесс крашит ~6 раз → `BrowserProcessExited`
+> через ~10-17 с, цикл ~38 раз за 200 с (UI мерцает).
+>
+> **После фикса (`win7` для msedgewebview2.exe + win10 для приложения):**
+> UI Axon **реально рисуется** — подтверждено визуально (главная с каруселью
+> баннеров/TRENDING и экран Razer ID Login отрисованы полностью, 2026-06-18).
+> Чёрный экран устранён: viz больше не зовёт `DCompositionCreateDevice`,
+> презентация идёт через GDI BitBlt. Флаг `--disable-gpu-process-crash-limit`
+> при `win7` **убран** как избыточный (краш-цикл DComp устранён в корне; флаг лишь
+> маскировал симптом) — проверено живьём, UI рисуется и без него.
+>
+> _Предыстория: ранее реестр ошибочно ставил `win81` (= порог включения DComp) —
+> это убирало `BrowserProcessExited` (белый экран), но viz зацикливался на
+> DComp-краше и не выдавал кадры → **чёрный** экран. Замена на `win7` — настоящее
+> решение._
+>
+> **WineHQ #56378 — НЕ про named-pipe/Mojo** (research, обход Anubis): это баг
+> Chromium-sandbox bring-up, закрыт FIXED в Wine **11.1**; парный #56377 (freeze)
+> — FIXED в 10.5. Все их фиксы (winstation/desktop/token, `DeriveCapabilitySidsFromName`,
+> `SetAdditionalForegroundBoostProcesses`) **уже присутствуют в системном Wine 11.10**.
+> Chromium Mojo использует named pipes в BYTE-mode (Wine давно держит); с Chrome
+> ~112 Mojo ушёл в shared memory (ipcz). → **Патч Wine по named-pipe не требуется
+> и не помог бы; пропатченный Wine НЕ собирался** (отменено по результату research).
+>
+> Что НЕ помогло ранее (проверено живьём): `--single-process` (крашит быстрее),
+> `--no-zygote`, отключение `werfault.exe`, Xvfb без NVIDIA-EGL (EGL не корень),
+> `--disable-watchdog/--disable-hang-monitor`, fixed-version рантайм 109/133
+> (версия стабильности не даёт). Чтобы убрать оставшийся 1× ранний краш:
+> `--disable-gpu-watchdog` + повышение GPU-crash-лимита, Wine-Staging ≥11.6
+> (DirectComposition патчсет), либо вынос WebView2 во внешний хост (CDP-proxy).
+
+### Расшифровка обоев
+
+Razer Axon хранит скачанные обои как ZipCrypto-зашифрованные ZIP-архивы, замаскированные под `.mp4`.
+
+```bash
+# Автосканирование и извлечение всех обоев
+razer-axon-decrypt.py
+
+# Показать только пароли
+razer-axon-decrypt.py -p
+
+# Пробный запуск (без извлечения)
+razer-axon-decrypt.py -n
+
+# Пропустить уже извлечённые
+razer-axon-decrypt.py -s
+
+# Свои директории
+razer-axon-decrypt.py -d /путь/к/обоям -o /путь/к/выходу
+
+# Один файл
+razer-axon-decrypt.py -f wallpaper.mp4 -c ResourceConfig.txt
+
+# JSON-вывод (для автоматизации)
+razer-axon-decrypt.py -j
+
+# Английский интерфейс
+razer-axon-decrypt.py --lang en
+
+# Подробный вывод (debug)
+razer-axon-decrypt.py -v
+```
+
+#### Как работает расшифровка
+
+Пароль каждого обоя вычисляется из его `ResourceConfig.txt`:
+
+```python
+import hmac, hashlib
+content = open("ResourceConfig.txt").read()
+password = hmac.new(b"j6l-aUmhCc@tN%T_", content.encode(), hashlib.sha256).hexdigest()
+```
+
+HMAC-ключ захардкожен в .NET-сборках Razer Axon.
+
+## Как это работает
+
+### Архитектура
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Razer Axon (Wine) — оригинальные файлы, без патчей  │
+│                                                     │
+│  RazerAxon.exe                                      │
+│       │                                             │
+│       ├── RazerAxon.UserManager.dll (ОРИГИНАЛ)      │
+│       │       └── NacClient ──► named pipe IPC      │
+│       │                                             │
+│       ├── WebView2 UI ──► axon-api.razer.com        │
+│       │                                             │
+│       └── WallpaperPlayerManager                    │
+│               └── Расшифровка ZIP → воспроизведение  │
+│                                                     │
+│  RazerCentralService.exe (Wine-сервис)              │
+│       ├── AccountManager ──► авторизация             │
+│       ├── Named pipe IPC ──► связь с Axon           │
+│       └── Razer API ──► manifest.razerapi.com       │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│ Linux                                               │
+│                                                     │
+│  razer-login.py ──► id.razer.com ──► JWT-токен      │
+│  razer-token-inject.py ──► pipe IPC ──► сервис      │
+│  razer-axon.sh ──► Wine + фиксы окружения/панели    │
+│  razer-axon-decrypt.py ──► HMAC-SHA256 → unzip      │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Как работает авторизация
+
+Razer Central Service (`RazerCentralService.exe`) запускается как Wine-сервис и слушает на named pipe `{FC828A97-C116-453D-BD88-AD471496E03C}`. Axon подключается к нему через `NacClient.dll` для получения токена авторизации.
+
+`razer-token-inject.py` подключается к тому же pipe и отправляет команду `WebApp_SetLoginSuccessFromWeb` с JWT-токеном, полученным через `razer-login.py`. Это эмулирует веб-авторизацию через Razer Central GUI (который не отображается под Wine из-за ограничений WPF-рендеринга).
+
+Все файлы Razer остаются оригинальными — никаких патчей бинарников.
+
+### Формат токена
+
+`~/.wine/drive_c/users/<USER>/AppData/Local/Razer/RazerAxon/wine_login_token.json`:
+
+```json
+{
+  "convertFromGuest": false,
+  "token": "eyJhbGciOiJFUzI1NiI...",
+  "isOnline": true,
+  "isGuest": false,
+  "uuid": "RZR_...",
+  "loginId": "user@example.com",
+  "tokenExpiry": "2026-04-01T21:46:43.000Z",
+  "stayLoggedIn": true
+}
+```
+
+### Шифрование обоев
+
+Обои в `~/RazerAxonWallpapers/<id>/Resource/` — это ZipCrypto-зашифрованные ZIP-архивы:
+
+```
+password = HMAC-SHA256("j6l-aUmhCc@tN%T_", ResourceConfig.txt).hexdigest()
+```
+
+## Решение проблем
+
+### Axon показывает чёрное/пустое окно
+Токен не инжектирован или истёк:
+```bash
+razer-login.py            # Обновить токен
+razer-token-inject.py     # Инжектировать
+```
+
+### Razer Central Service не запускается
+
+Служба зарегистрирована установщиком Razer под именем `RzActionSvc`
+(имя `RazerCentralService` не существует — по нему `sc` ответит «служба не найдена»):
+
+```bash
+# Проверить состояние
+wine sc query RzActionSvc          # ожидаем STATE : 4  RUNNING
+
+# Поднять вручную. wineserver -p обязателен: служба живёт ровно столько,
+# сколько живёт сеанс Wine, и без него гаснет через несколько секунд.
+wineserver -p
+wine sc start RzActionSvc
+```
+
+Если Axon запускается, но **окна нет вообще** — почти всегда причина именно в этом:
+`RazerAxon.exe` не создаёт окно, пока не отработает вход через Razer Central.
+
+### Кириллица в трее отображается квадратиками
+```bash
+wine reg add "HKCU\Software\Wine\Fonts\Replacements" /v "Segoe UI" /t REG_SZ /d "Tahoma" /f
+```
+
+### Токен истёк
+```bash
+razer-login.py --status   # Проверить
+razer-login.py            # Обновить
+razer-token-inject.py     # Инжектировать заново
+```
+
+### Окно не видно в панели задач
+Скрипт запуска исправляет это автоматически. Если проблема остаётся, убедитесь, что `xdotool` и `xprop` установлены.
+
+### Расшифровка обоев не работает
+Убедитесь, что `7z` или `unzip` установлен и поддерживает ZipCrypto.
+
+## Лицензия
+
+MIT
