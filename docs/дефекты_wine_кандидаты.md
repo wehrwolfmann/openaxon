@@ -342,7 +342,7 @@ Win32 кириллицу рисует: попросили «Segoe UI» — Wine 
 `Target` внутри `*.CompositeFont`, чинится тоже (3684 правки в 16 файлах). Реестр
 лучше — не трогаем файлы, принадлежащие .NET.
 
-В `scripts/установить-axon.sh` это шаг 9 (`setup_fonts`): три записи для
+В `scripts/install-axon.sh` это шаг 9 (`setup_fonts`): три записи для
 `Segoe UI`, `Segoe UI Symbol` и `Ebrima` со списком
 `Noto Sans|DejaVu Sans|Liberation Sans|Arial|Tahoma`. Tahoma в конце — надёжный пол:
 она входит в сам Wine, латиницу с кириллицей закрывает.

@@ -192,7 +192,7 @@ main() {
         wineserver -p 2>/dev/null
         WINEDEBUG=-all wine sc start RzActionSvc >/dev/null 2>&1
     else
-        warn "Razer Central не установлен — окно Axon не появится. Поставьте: scripts/установить-axon.sh"
+        warn "Razer Central не установлен — окно Axon не появится. Поставьте: scripts/install-axon.sh"
     fi
 
     # Check and update patched DLL

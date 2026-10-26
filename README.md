@@ -10,7 +10,7 @@ Run [Razer Axon](https://www.razer.com/software/axon) on Linux through Wine — 
 
 | File | Description |
 |------|-------------|
-| `scripts/установить-axon.sh` | **One-command install**: prefix, .NET, Razer Central, Axon, WebView2, rendering, launcher |
+| `scripts/install-axon.sh` | **One-command install**: prefix, .NET, Razer Central, Axon, WebView2, rendering, launcher |
 | `razer-login.py` | Razer ID login |
 | `razer-token-inject.py` | Injects the token into Razer Central Service (works without patching the DLL) |
 | `razer-token-refresh.sh` | Silent token auto-refresh (for a systemd `--user` timer, see `systemd/`) |
@@ -111,7 +111,7 @@ environment.systemPackages = with pkgs; [
 ### The easiest way — one command
 
 ```bash
-./scripts/установить-axon.sh
+./scripts/install-axon.sh
 ```
 
 The script is non-interactive: it creates a dedicated Wine prefix, installs .NET Framework 4.8,

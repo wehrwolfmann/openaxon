@@ -10,7 +10,7 @@
 
 | Файл | Описание |
 |------|----------|
-| `scripts/установить-axon.sh` | **Установка одной командой**: префикс, .NET, Razer Central, Axon, WebView2, отрисовка, ярлык |
+| `scripts/install-axon.sh` | **Установка одной командой**: префикс, .NET, Razer Central, Axon, WebView2, отрисовка, ярлык |
 | `razer-login.py` | Авторизация в Razer ID |
 | `razer-token-inject.py` | Инжекция токена в Razer Central Service (работа без патча DLL) |
 | `razer-token-refresh.sh` | Тихое авто-обновление токена (для systemd `--user` таймера, см. `systemd/`) |
@@ -111,7 +111,7 @@ environment.systemPackages = with pkgs; [
 ### Самый простой способ — одна команда
 
 ```bash
-./scripts/установить-axon.sh
+./scripts/install-axon.sh
 ```
 
 Скрипт неинтерактивный: сам создаёт отдельный префикс Wine, ставит .NET Framework 4.8,
