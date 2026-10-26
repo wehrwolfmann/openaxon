@@ -249,7 +249,7 @@ install_webview2_fixed() {
 # win7 — ТОЛЬКО рендереру; RazerAxon.exe и префикс остаются win10 (иначе сервер
 # Razer отдаёт пустой каталог). HW-accel Edge off — вспомогательное. Подтверждено
 # живьём. Раньше тут стоял win81 (= порог DComp), что и давало чёрный экран.
-# Детали: docs/axon_installer_wine_diagnosis_2026_05_31.md, раздел «КОРЕНЬ ПЕРЕУСТАНОВЛЕН».
+# Детали: docs/axon_installer_wine_diagnosis_2026_05_31.md, раздел «ROOT CAUSE REVISED».
 # Вспомогательные флаги (настоящий фикс — win7 для msedgewebview2.exe выше).
 # Пишутся в реестр (HKCU\Environment), чтобы действовать при ЛЮБОМ запуске Axon
 # (меню Wine, protocol-handler RazerAxon:, GUI), а не только через razer-axon.sh.

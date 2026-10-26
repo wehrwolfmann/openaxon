@@ -1,65 +1,65 @@
-# Razer Axon — повторный реверс-инжиниринг (2026-05-31)
+# Razer Axon — second reverse-engineering pass (2026-05-31)
 
-Статический RE установленного `~/.wine/.../Razer/Razer Axon/`. Цель — найти НОВОЕ/уточнения
-по сравнению с уже существующей документацией OpenAxon (`docs/*.md`), оценить точность
-GTK4-клиента и выдать приоритезированный список улучшений.
+Static RE of the installed `~/.wine/.../Razer/Razer Axon/`. Goal: find anything NEW or more precise
+compared with the existing OpenAxon documentation (`docs/*.md`), assess how accurate the
+GTK4 client is, and produce a prioritised list of improvements.
 
-**Метод**: ключевые DLL скопированы во временный рабочий каталог, декомпилированы через `ilspycmd`
-(v10.0.0.8330, .NET-декомпилятор ILSpy). Установленный Axon НЕ запускался, НЕ модифицировался.
-WebView-кеш (`UICache/.../EBWebView`) проанализирован только на чтение.
+**Method**: the key DLLs were copied to a temporary working directory and decompiled with `ilspycmd`
+(v10.0.0.8330, the ILSpy .NET decompiler). The installed Axon was NOT run and NOT modified.
+The WebView cache (`UICache/.../EBWebView`) was analysed read-only.
 
-**Калибровка уверенности**: помечено [ДЕКОМП] = прочитано в декомпилированном коде,
-[КЕШ] = извлечено из WebView-кеша, [ПРЕДП] = предположение/вывод.
-
----
-
-## 0. Главный вывод (честно)
-
-Существующая документация OpenAxon основана на реальном реверсе и точна/глубока:
-
-- `razer-central-ipc.md` — wire-формат пайпа, GUID'ы пайпов, полный NacCommands enum: **всё совпадает с бинарём 1:1**.
-- `webview-host-objects.md` — 6 host-объектов, ~124 метода, имена объектов с опечатками Razer: **совпадает**.
-- `design-system.md` — палитра (#44d62c, #1a1a1a, …), токены, layout, компоненты: **совпадает с CSS-кешем**.
-- `wallpaper-player.md` — SequoiaCommand, пайпы плеера: **присутствует**.
-
-Из визуального оформления оригинала воспроизведено только **оформление GTK4**, а не протоколы.
-И GTK-клиент УЖЕ использует точную палитру и размеры из спеки
-(sidebar 260px, card min-width 240/max 266px, радиус 2px и т.д.).
-
-Поэтому этот документ — в основном **подтверждение + точечные новые детали + пробелы**,
-а не переписывание.
+**Confidence calibration**: [DECOMP] = read in decompiled code,
+[CACHE] = extracted from the WebView cache, [ASSUMED] = assumption/inference.
 
 ---
 
-## 1. Инвентарь и версия
+## 0. Main conclusion (honestly)
 
-[ДЕКОМП/файлы]
+The existing OpenAxon documentation is based on real reverse engineering and is accurate and thorough:
 
-- **Версия Axon: `2.6.2.0`** (из `appsettings.json` → `StartupUri https://axon-api.razer.com/2.6.2.0/`).
-  Это **та же версия**, что зафиксирована в существующих доках → Axon с предыдущего разбора **НЕ обновлялся**, новых файлов нет.
-- **Рантайм**: .NET **6.0.36** (`Microsoft.NETCore.App` + `Microsoft.WindowsDesktop.App`), win-x64, WPF-хост.
+- `razer-central-ipc.md` — pipe wire format, pipe GUIDs, full NacCommands enum: **all matches the binary 1:1**.
+- `webview-host-objects.md` — 6 host objects, ~124 methods, object names with Razer's typos: **matches**.
+- `design-system.md` — palette (#44d62c, #1a1a1a, …), tokens, layout, components: **matches the CSS cache**.
+- `wallpaper-player.md` — SequoiaCommand, player pipes: **present**.
+
+Of the original's visual design, only the **GTK4 styling** has been reproduced, not the protocols.
+And the GTK client ALREADY uses the exact palette and sizes from the spec
+(sidebar 260px, card min-width 240/max 266px, radius 2px, etc.).
+
+So this document is mostly **confirmation + a few new details + gaps**,
+not a rewrite.
+
+---
+
+## 1. Inventory and version
+
+[DECOMP/files]
+
+- **Axon version: `2.6.2.0`** (from `appsettings.json` → `StartupUri https://axon-api.razer.com/2.6.2.0/`).
+  This is **the same version** recorded in the existing docs → Axon has **NOT been updated** since the previous analysis; there are no new files.
+- **Runtime**: .NET **6.0.36** (`Microsoft.NETCore.App` + `Microsoft.WindowsDesktop.App`), win-x64, WPF host.
 - **API base**: `https://axon-api.razer.com/v1` (`WebServiceDomain`).
-- Внутреннее кодовое имя — **Sequoia** (`D:\RazerDev\sequoia-client-v2\...`, неймспейсы `RazerSequoia.*`).
+- Internal code name: **Sequoia** (`D:\RazerDev\sequoia-client-v2\...`, namespaces `RazerSequoia.*`).
 
-### ⚠️ ВАЖНО: установленный Axon уже ПРОПАТЧЕН OpenAxon
+### ⚠️ IMPORTANT: the installed Axon is already PATCHED by OpenAxon
 
-`RazerAxon.UserManager.dll` в `~/.wine` — это **НЕ оригинал Razer**, а пропатченная OpenAxon
-версия (совпадает с `patch/RazerLoginForm.cs`): содержит `wine_login_token.json`,
-`machineId: "wine-linux"`, MessageBox «Login successful! Restart Razer Axon», вшитый JS-шим
-`callbackObjforjs`/`callJSFromClient`. Все остальные DLL (`AccountManager*`, `RazerCentralClient`,
-`RcClientBase`, `WallpaperManager`, `WallpaperPlayerManager`, `DataAcquisition`, …) — **оригинальные
-Razer**, и именно они были основным источником данных ниже.
+`RazerAxon.UserManager.dll` in `~/.wine` is **NOT the Razer original** but the version patched by OpenAxon
+(matches `patch/RazerLoginForm.cs`): it contains `wine_login_token.json`,
+`machineId: "wine-linux"`, the MessageBox "Login successful! Restart Razer Axon", and an embedded JS shim
+`callbackObjforjs`/`callJSFromClient`. All the other DLLs (`AccountManager*`, `RazerCentralClient`,
+`RcClientBase`, `WallpaperManager`, `WallpaperPlayerManager`, `DataAcquisition`, …) are **original
+Razer** ones, and they were the main source of the data below.
 
-> Следствие для будущих RE: если нужен ОРИГИНАЛЬНЫЙ `UserManager.dll` — брать из чистого
-> установщика (развёрнутого в изолированный тестовый Wine-префикс), а не из `~/.wine`.
+> Consequence for future RE: if you need the ORIGINAL `UserManager.dll`, take it from a clean
+> installer (deployed into an isolated test Wine prefix), not from `~/.wine`.
 
 ---
 
-## 2. Протоколы — подтверждения и новые детали
+## 2. Protocols — confirmations and new details
 
-### 2.1 Razer Central named-pipe (подтверждено 1:1) [ДЕКОМП]
+### 2.1 Razer Central named pipe (confirmed 1:1) [DECOMP]
 
-`RcClientBase.dll` → формат пакета совпадает с `razer-central-ipc.md`:
+`RcClientBase.dll` → the packet format matches `razer-central-ipc.md`:
 
 ```
 header (HEADER_LEN = 24):
@@ -67,31 +67,31 @@ header (HEADER_LEN = 24):
   int32  serviceType (RzServiceType)
   int32  dataLength
   int32  headerLength = 24
-  int64  packetId   (Interlocked.Increment, пропуск 0)
+  int64  packetId   (Interlocked.Increment, skipping 0)
 payload (dataLength)
 ```
-Чтение: MIN_HEADER_LEN = 16 (читает 4×int32), затем `if version>1` читает int64 packetId,
-`if headerLen>24` пропускает лишнее. **Уточнение к доке**: парсер версионно-устойчив —
-поддерживает заголовки >24 байт (forward-compat), читая `headerLen-24` лишних байт.
+Reading: MIN_HEADER_LEN = 16 (reads 4×int32), then `if version>1` reads the int64 packetId,
+`if headerLen>24` skips the excess. **Refinement to the doc**: the parser is version-tolerant —
+it supports headers longer than 24 bytes (forward-compat) by reading `headerLen-24` extra bytes.
 
-GUID-пайпы (совпадают):
+Pipe GUIDs (match):
 - ActionCenter/Service: `{CD7C71F0-A5B9-4F24-897A-DF6E20E43B96}`
 - NAC: `{FC828A97-C116-453D-BD88-AD471496E03C}`
 - NAC Client: `{E7A6CCA9-FF3F-4741-8E66-1127EE39471D}` + windows-username
-- Есть DEBUG-варианты с префиксом `{DBG-...}` (используются при `m_debugPipeName`). [новое уточнение]
+- There are DEBUG variants with a `{DBG-...}` prefix (used when `m_debugPipeName` is set). [new refinement]
 
 `RzServiceType`: UpdateManager=2, AccountManager=4, Notifications=5, ActionCenter=6.
 
-### 2.2 Player IPC (Sequoia native player) [ДЕКОМП] — детали для wallpaper-player.md
+### 2.2 Player IPC (Sequoia native player) [DECOMP] — details for wallpaper-player.md
 
 `RazerAxon.WallpaperPlayerManager.dll` → `ShellLauncher.Launch`:
 
-- Запуск: `RazerAxon.Player.exe` с аргументами:
+- Launch: `RazerAxon.Player.exe` with the arguments:
   `readpipename=\\.\pipe\<W>  writepipename=\\.\pipe\<R>  version=<appVersion>`
-  (+ `-screensaver` в режиме скринсейвера; тогда запуск без shell, отдельными argv).
-- Два **раздельных** NamedPipeServerStream: `writePipename` (PipeDirection.Out) и
-  `readPipeName` (PipeDirection.In). Имя пайпа-паттерн: **`RazerCortexServiceAndShell{Guid:N}`**.
-- Команды — JSON-объект `SequoiaCommand`:
+  (+ `-screensaver` in screensaver mode; in that case it is launched without a shell, as separate argv).
+- Two **separate** NamedPipeServerStreams: `writePipename` (PipeDirection.Out) and
+  `readPipeName` (PipeDirection.In). Pipe name pattern: **`RazerCortexServiceAndShell{Guid:N}`**.
+- Commands are a JSON `SequoiaCommand` object:
   ```csharp
   class SequoiaCommand {
     string Command; string MonitorId; string Source; string Type;
@@ -100,168 +100,168 @@ GUID-пайпы (совпадают):
     //      Dictionary<WallpaperEffectsEnum,string> playEffects=null, playMode="", needDeleteAfterPlay=false)
   }
   ```
-- **Полный набор Command-вербов (8)**: `Play`, `Switch`, `PlayEffect`, `Volume`, `Pause`,
-  `Resume`, `Stop`, `Terminate`. [полезно для собственного плеера OpenAxon]
-- Сериализация: `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (важно — пути с `\` не эскейпятся в `\u`).
+- **Full set of Command verbs (8)**: `Play`, `Switch`, `PlayEffect`, `Volume`, `Pause`,
+  `Resume`, `Stop`, `Terminate`. [useful for OpenAxon's own player]
+- Serialisation: `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (important: paths with `\` are not escaped to `\u`).
 
-### 2.3 Аналитика / Kinesis / STS [ДЕКОМП] — детали
+### 2.3 Analytics / Kinesis / STS [DECOMP] — details
 
 `RazerAxon.DataAcquisition.dll`:
-- BigData идёт в **AWS Kinesis** через `RazerBigDataClient(RazerBigDataApps=1, ...)`.
-- Креды Kinesis берутся по `GET <apiDomain>/sts` (STS-эндпоинт), затем temporary AWS creds
-  (accessKeyId/secretAccessKey/sessionToken/expiry/arn). [уточнение: путь `/sts`]
-- App-rating: `GET https://bespoke-analytics.razerapi.com/api/v1/1100/app-rating/recommendation`.
-  (новый домен `bespoke-analytics.razerapi.com` — стоит добавить в axon-api.md, если нет).
+- BigData goes to **AWS Kinesis** via `RazerBigDataClient(RazerBigDataApps=1, ...)`.
+- Kinesis credentials are obtained via `GET <apiDomain>/sts` (STS endpoint), then temporary AWS creds
+  (accessKeyId/secretAccessKey/sessionToken/expiry/arn). [refinement: the `/sts` path]
+- App rating: `GET https://bespoke-analytics.razerapi.com/api/v1/1100/app-rating/recommendation`.
+  (new domain `bespoke-analytics.razerapi.com` — worth adding to axon-api.md if it is missing).
 
-### 2.4 Полный список доменов/URL (из всех DLL) [ДЕКОМП]
+### 2.4 Full list of domains/URLs (from all DLLs) [DECOMP]
 
 ```
 https://axon-api.razer.com            (+ /v1, + /2.6.2.0/)
 https://axon-api-staging.razer.com    (staging)
 https://bespoke-analytics.razerapi.com
 https://id.razer.com/                 (Razer ID login)
-https://zvault.razer.com              (кошелёк/баланс)
+https://zvault.razer.com              (wallet/balance)
 https://developer.razer.com/chroma
 https://mysupport.razer.com/
 https://www.razer.com/contact-us
-https://www.youtube.com/embed/        (трейлеры в карточках)
+https://www.youtube.com/embed/        (trailers in cards)
 ```
 
-### 2.5 ITS AES-ключ (НОВОЕ, не в доках) [ДЕКОМП]
+### 2.5 ITS AES key (NEW, not in the docs) [DECOMP]
 
 `ActionServiceCommon.dll` → `RebootRequiredHelper`:
 ```
 Key (base64) = "BYU/nsHCFDD/90xJUFJtRMrQ/f+tOohC87vhv0Fre/s="
 IV  (base64) = "p2V8/a0Ik0noC2Z7iL8U9Q=="
 Registry: HKLM\Software\Razer\Services\RazerCentral\ITS,  value "TS" (timestamp), "ITS"
-AES-CBC, ключ/IV из base64.
+AES-CBC, key/IV from base64.
 ```
-**Назначение**: шифрует install-timestamp в реестре для логики «нужна перезагрузка после
-установки» (`CanStart()`). **НЕ относится к обоям и НЕ к токенам пользователя.** Для OpenAxon
-интереса почти не представляет (нет нужды читать ITS на Linux), но зафиксировано для полноты —
-раньше где-то всплывал вопрос «есть ли в Axon вшитые крипто-ключи»: да, но только этот,
-и он не security-sensitive.
+**Purpose**: encrypts the install timestamp in the registry for the "reboot required after
+installation" logic (`CanStart()`). **It has nothing to do with wallpapers or user tokens.** It is of
+little interest to OpenAxon (there is no need to read ITS on Linux), but it is recorded for completeness —
+the question "does Axon have embedded crypto keys" came up earlier: yes, but only this one,
+and it is not security-sensitive.
 
-### 2.6 Auth-токены [ДЕКОМП]
+### 2.6 Auth tokens [DECOMP]
 
-`AccountManagerCommon.dll` → `ConnectedAccountCredentials` (XML-сериализация):
+`AccountManagerCommon.dll` → `ConnectedAccountCredentials` (XML serialisation):
 `AccessToken`, `AccessTokenSecret`, `RefreshToken`, `SsiToken`, `ClientKey`, `ClientSecret`,
-`Permissions[]`, `Account`. NacCommands enum полностью совпадает с докой (включая
+`Permissions[]`, `Account`. The NacCommands enum fully matches the doc (including
 `WebApp_GenerateToken=131097`, `UI_SetToken=131101`, `GetWallet=58`, `TryAutoLoginAsGuest=61`).
 
-В пропатченном `UserManager` токен лежит в
-`%LocalAppData%\Razer\RazerAxon\wine_login_token.json` с полями
-`token, uuid, loginId, avatarUrl, nickname` (это формат OpenAxon, не Razer).
+In the patched `UserManager`, the token is stored in
+`%LocalAppData%\Razer\RazerAxon\wine_login_token.json` with the fields
+`token, uuid, loginId, avatarUrl, nickname` (this is the OpenAxon format, not Razer's).
 
 ---
 
-## 3. Формат обоев / расшифровка [ДЕКОМП + сверка с axon.py]
+## 3. Wallpaper format / decryption [DECOMP + cross-check with axon.py]
 
-- Расшифровка обоев УЖЕ корректно реализована в OpenAxon (`axon.py`):
+- Wallpaper decryption is ALREADY implemented correctly in OpenAxon (`axon.py`):
   `password = HMAC-SHA256(HMAC_KEY=b"j6l-aUmhCc@tN%T_", ResourceConfig.txt).hexdigest()`,
-  обои — password-protected ZIP.
-- **Подтверждение из бинаря**: ни в `WallpaperManager.dll`, ни в native `RazerAxon.Player.exe`
-  нет AES/RSA/CryptoStream для обоев → обои = именно зашифрованный ZIP, дешифровка целиком
-  на распаковке архива. Нативный плеер получает уже распакованный `ResourceConfig.txt`/`PlaySourceInfo`.
-  → **Реализация OpenAxon верна, новый ключ/алгоритм не обнаружен.** [уверенность высокая]
+  a wallpaper is a password-protected ZIP.
+- **Confirmation from the binary**: neither `WallpaperManager.dll` nor the native `RazerAxon.Player.exe`
+  has any AES/RSA/CryptoStream for wallpapers → a wallpaper is precisely an encrypted ZIP, and decryption happens entirely
+  when the archive is unpacked. The native player receives the already unpacked `ResourceConfig.txt`/`PlaySourceInfo`.
+  → **The OpenAxon implementation is correct; no new key/algorithm was found.** [high confidence]
 
-### Модель данных обоев (уточнения enum) [ДЕКОМП] — `RazerAxon.IWallpaperManager.dll`
+### Wallpaper data model (enum refinements) [DECOMP] — `RazerAxon.IWallpaperManager.dll`
 
 ```csharp
-enum WallPaperTypes      { VIDEO, WEB, IMAGE, LOCALVIDEO, LOCALWEB, LOCALIMAGE, NONE }   // порядок = числовое значение
+enum WallPaperTypes      { VIDEO, WEB, IMAGE, LOCALVIDEO, LOCALWEB, LOCALIMAGE, NONE }   // order = numeric value
 enum WallPaperStatusEnum { Installed, Playing, FileBroken, FileLost, Uninstalled, Downloading, None }  // [JsonStringEnum]
 enum WallpaperEffectsEnum{ None, WallpaperFillingMode, Brightness, Contrast, Hue, Saturation, PlayRate, WebInteraction, ThirdpartInfo }
 enum StaticImgFillModesEnum { Fit, Fill, Stretch, Center, Tile }
-enum WallpaperPlayers    { WindowsMediaFoundation, WebView2 }   // (ISettingManager) — дефолт WebView2
+enum WallpaperPlayers    { WindowsMediaFoundation, WebView2 }   // (ISettingManager) — default WebView2
 enum WallpaperThirdparts { Spotify }
 ```
-`WallPaperItem` — большой DTO: `Id, Title, ThumbnailSource, PreviewSource, PlaylistThumbnail,
+`WallPaperItem` is a large DTO: `Id, Title, ThumbnailSource, PreviewSource, PlaylistThumbnail,
 Type, Source, Author(AuthorInfo), Resolution, WallPaperStatus, PlayResoucePath,
 IsChromaEnabled/Supported/Customized, IsWebInteractionSupported, IsMute, Audible,
 Category/CategoryName, AllTags, Rating, IsFavorite, Downloads, Upvoted, Silver, LatestVersion, …`.
-**Уточнение для axon-api.md**: `Audible` — строка ("0"/"1"), не bool; `Silver` — int (AI-кредиты).
+**Refinement for axon-api.md**: `Audible` is a string ("0"/"1"), not a bool; `Silver` is an int (AI credits).
 
-`UserAppSettings`: `MaxVolume=50` (дефолт), `IsExitDirectly=2` (3-стейт: 0/1/2=не задано),
-`WallpaperPlayer=WebView2` (дефолт), `ThirdpartInfos: Dict<Spotify, string>`.
+`UserAppSettings`: `MaxVolume=50` (default), `IsExitDirectly=2` (tri-state: 0/1/2=unset),
+`WallpaperPlayer=WebView2` (default), `ThirdpartInfos: Dict<Spotify, string>`.
 
 ---
 
-## 4. Реальный UI (для GTK4-точности) [КЕШ + ДЕКОМП]
+## 4. The real UI (for GTK4 accuracy) [CACHE + DECOMP]
 
-### 4.1 Палитра — подтверждена из WebView-кеша
+### 4.1 Palette — confirmed from the WebView cache
 
-В кеше (`.../EBWebView/Default/Cache/Cache_Data/data_*`) реально встречаются `#44d62c`
-(Razer Green, доминирующий), `#1a1a1a`, `#cccccc`, `#212121`, `#333333`. Совпадает с
-`design-system.md`. GTK-клиент (`razer-axon-gui.py`) уже использует именно эти токены
-(#44d62c/#7ce26b/#359b24/#226916, #1a1a1a/#161616/#2e2e2e, #909090/#c8c8c8). **Расхождений нет.**
+The cache (`.../EBWebView/Default/Cache/Cache_Data/data_*`) actually contains `#44d62c`
+(Razer Green, dominant), `#1a1a1a`, `#cccccc`, `#212121`, `#333333`. This matches
+`design-system.md`. The GTK client (`razer-axon-gui.py`) already uses exactly these tokens
+(#44d62c/#7ce26b/#359b24/#226916, #1a1a1a/#161616/#2e2e2e, #909090/#c8c8c8). **No discrepancies.**
 
-### 4.2 Локальные HTML-плееры (НОВОЕ — не в доках) [файлы установки]
+### 4.2 Local HTML players (NEW — not in the docs) [installation files]
 
-В корне установки лежат **локальные HTML** (не из CDN):
-- **`RazerAxonWebPlayer.html`** — реальный layer-композитор плеера. Структура:
-  - 3 типа слоёв: `.image-player`, `.video-player`, `.web-player` (iframe), все
+The installation root contains **local HTML files** (not from the CDN):
+- **`RazerAxonWebPlayer.html`** — the player's actual layer compositor. Structure:
+  - 3 layer types: `.image-player`, `.video-player`, `.web-player` (iframe), all
     `position:absolute; inset 0; width/height 100%`.
-  - **Кросс-фейд переходов**: `opacity:0 → 1`, `transition: opacity 0.3s ease-in-out`,
-    активный слой получает класс `.cur` (`opacity:1; z-index:2`). [ценно: OpenAxon-плеер
-    может воспроизвести ровно такой 0.3s opacity-кроссфейд между обоями]
-  - image-слой: `background-size: cover` (по умолч.), есть `contain`.
+  - **Cross-fade transitions**: `opacity:0 → 1`, `transition: opacity 0.3s ease-in-out`,
+    the active layer gets the `.cur` class (`opacity:1; z-index:2`). [valuable: the OpenAxon player
+    can reproduce exactly this 0.3s opacity cross-fade between wallpapers]
+  - image layer: `background-size: cover` (default), `contain` is also available.
   - body bg `#222`.
-- **`DefaultScreenSaver.html`** — фон `#111111`, класс `.logo-background`.
+- **`DefaultScreenSaver.html`** — background `#111111`, class `.logo-background`.
 
-### 4.3 Структура UI (из design-system.md — уже задокументирована)
+### 4.3 UI structure (from design-system.md — already documented)
 
-Полностью покрыта: title bar, nav, sidebar **260px** (граница #111), грид-карточки
-(min 240 / max 266px, radius 2px), detail-панель (right slide-in), playlist-бар (низ),
-кнопки, модалки (с опечаткой `madal` в оригинале), settings, формы (checkbox/radio/switch/
-slider/select/input), dropdown/context-menu/pagination. React-маршруты (`/`, `/browse`,
-`/createAI`, `/hall/*`, `/collections`, `/artists`, `/myWallPaper`) — в react-architecture.md.
-
----
-
-## 5. Конкретные улучшения для OpenAxon (приоритезировано)
-
-### P1 — высокая ценность, низкая цена
-1. **Кроссфейд 0.3s в собственном плеере** (`openaxon-player.py`): при смене обои
-   делать `opacity 0→1, 0.3s ease-in-out` поверх старого слоя (как `RazerAxonWebPlayer.html`).
-   Наличие кроссфейда в текущем плеере требует проверки. [новое из локального HTML]
-2. **Добавить домен `bespoke-analytics.razerapi.com` и путь `/sts`** в `axon-api.md`
-   (если отсутствуют) — для полноты карты сети.
-3. **Зафиксировать в wallpaper-player.md** точный набор из 8 SequoiaCommand-вербов и
-   паттерн пайпа `RazerCortexServiceAndShell{guid:N}` + аргументы `readpipename/writepipename/version`
-   (на случай, если OpenAxon когда-нибудь будет говорить с настоящим `RazerAxon.Player.exe`
-   под Wine, а не только своим Python-плеером).
-
-### P2 — средняя ценность
-4. **Уточнить типы полей** в моделях OpenAxon: `Audible` — строка, `IsExitDirectly` — 3-стейт int,
-   `WallpaperPlayer` дефолт = `WebView2`. Гарантирует совместимость при парсинге ответов API/локального стейта.
-5. **Поддержать `StaticImgFillModesEnum` полностью** (Fit/Fill/Stretch/Center/Tile) в плеере
-   изображений — Razer применяет это как effect `WallpaperFillingMode`. Проверить, что OpenAxon
-   умеет все 5 режимов, не только cover.
-6. **Версионно-устойчивый парсер пайпа** (если OpenAxon реализует клиент Central): читать
-   `headerLen` и пропускать `headerLen-24` лишних байт (forward-compat, как делает Razer).
-
-### P3 — низкая ценность / для полноты
-7. **Документировать ITS AES-ключ** как «известный, не security-критичный» (см. §2.5) —
-   чтобы закрыть вопрос «есть ли в Axon вшитые ключи».
-8. **Брать оригинальный `UserManager.dll`** для будущих RE из чистого установщика, а не из
-   пропатченного `~/.wine` (см. §1).
-9. WebView-кеш-бандлы сжаты (gzip/brotli) — для свежей выгрузки CSS лучше брать прямой URL
-   `https://axon-assets-cdn.razerzone.com/static/prod/2.6.2.0/` (как делал прошлый RE), а не
-   распаковывать Chromium-кеш.
-
-### Чего делать НЕ нужно
-- Переписывать существующие доки протоколов/UI — они точны.
-- Искать иной алгоритм расшифровки обоев — его нет (HMAC-ZIP подтверждён бинарём).
-- Менять палитру GTK — она уже совпадает с реальным CSS.
+Fully covered: title bar, nav, sidebar **260px** (border #111), card grid
+(min 240 / max 266px, radius 2px), detail panel (right slide-in), playlist bar (bottom),
+buttons, modals (with the `madal` typo in the original), settings, forms (checkbox/radio/switch/
+slider/select/input), dropdown/context-menu/pagination. The React routes (`/`, `/browse`,
+`/createAI`, `/hall/*`, `/collections`, `/artists`, `/myWallPaper`) are in react-architecture.md.
 
 ---
 
-## Приложение: что декомпилировано
+## 5. Concrete improvements for OpenAxon (prioritised)
 
-Временный рабочий каталог декомпиляции (ilspycmd) содержит: RazerAxon, UserManager(пропатчен),
+### P1 — high value, low cost
+1. **0.3s cross-fade in our own player** (`openaxon-player.py`): when the wallpaper changes,
+   apply `opacity 0→1, 0.3s ease-in-out` over the old layer (as in `RazerAxonWebPlayer.html`).
+   Whether the current player already has a cross-fade needs to be checked. [new, from the local HTML]
+2. **Add the `bespoke-analytics.razerapi.com` domain and the `/sts` path** to `axon-api.md`
+   (if missing) — for a complete network map.
+3. **Record in wallpaper-player.md** the exact set of 8 SequoiaCommand verbs and
+   the pipe pattern `RazerCortexServiceAndShell{guid:N}` + the `readpipename/writepipename/version` arguments
+   (in case OpenAxon ever talks to the real `RazerAxon.Player.exe`
+   under Wine, not only to its own Python player).
+
+### P2 — medium value
+4. **Refine field types** in the OpenAxon models: `Audible` is a string, `IsExitDirectly` is a tri-state int,
+   the `WallpaperPlayer` default is `WebView2`. This guarantees compatibility when parsing API responses/local state.
+5. **Fully support `StaticImgFillModesEnum`** (Fit/Fill/Stretch/Center/Tile) in the image
+   player — Razer applies it as the `WallpaperFillingMode` effect. Check that OpenAxon
+   supports all 5 modes, not only cover.
+6. **Version-tolerant pipe parser** (if OpenAxon implements a Central client): read
+   `headerLen` and skip `headerLen-24` extra bytes (forward-compat, as Razer does).
+
+### P3 — low value / for completeness
+7. **Document the ITS AES key** as "known, not security-critical" (see §2.5) —
+   to settle the question "does Axon have embedded keys".
+8. **Take the original `UserManager.dll`** for future RE from a clean installer, not from
+   the patched `~/.wine` (see §1).
+9. The WebView cache bundles are compressed (gzip/brotli) — for a fresh CSS dump it is better to use the direct URL
+   `https://axon-assets-cdn.razerzone.com/static/prod/2.6.2.0/` (as the previous RE did) rather than
+   unpacking the Chromium cache.
+
+### What NOT to do
+- Rewrite the existing protocol/UI docs — they are accurate.
+- Look for a different wallpaper decryption algorithm — there is none (HMAC-ZIP is confirmed by the binary).
+- Change the GTK palette — it already matches the real CSS.
+
+---
+
+## Appendix: what was decompiled
+
+The temporary decompilation working directory (ilspycmd) contains: RazerAxon, UserManager (patched),
 WallpaperManager, WallpaperPlayerManager, WebviewWindowManager, DownloadManager, PlayListManager,
 SettingManager, NotificationManager, DataAcquisition, EnvironmentManager, ScreenSaver, Reporter,
-RazerCentralClient, RcClientBase, AccountManagerClient/Common, ActionServiceCommon + интерфейсные
-DLL (IWallpaperManager, IWallpaperPlayerManager, IPlayListManager, ISettingManager, IUserManager).
-`RazerAxon.exe`/`RazerAxon.Player.exe` — нативные apphost-обёртки (.NET-код в RazerAxon.dll;
-Player.exe — нативный C++ Sequoia-плеер, анализ через strings).
+RazerCentralClient, RcClientBase, AccountManagerClient/Common, ActionServiceCommon + the interface
+DLLs (IWallpaperManager, IWallpaperPlayerManager, IPlayListManager, ISettingManager, IUserManager).
+`RazerAxon.exe`/`RazerAxon.Player.exe` are native apphost wrappers (the .NET code is in RazerAxon.dll;
+Player.exe is the native C++ Sequoia player, analysed via strings).

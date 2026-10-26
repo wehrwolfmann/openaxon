@@ -1,157 +1,160 @@
-# OpenAxon — установка/запуск Razer Axon под Wine: фикс «доступ к серверу невозможен» (2026-05-31)
+# OpenAxon — installing/running Razer Axon under Wine: fixing "server access unavailable" (2026-05-31)
 
-Автор работ: Wehrwolfmann. Документ фиксирует диагностику и применение нашего прошлого
-OpenAxon-фикса к проблеме зелёного экрана Razer «ДОСТУП К СЕРВЕРУ НЕВОЗМОЖЕН / Услуга
-отключена / Проверьте» при запуске Razer Axon под Wine.
+Work by: Wehrwolfmann. This document records the diagnosis and the application of our earlier
+OpenAxon fix to the Razer green screen "SERVER ACCESS UNAVAILABLE / Service
+disabled / Check" that appears when Razer Axon is launched under Wine.
 
-## TL;DR (результат)
+## TL;DR (result)
 
-- Razer Axon **уже был установлен** ранее в `~/.wine` (`RazerAxon.exe`, `RazerCentralService.exe`,
-  ярлыки). Проблема не на этапе установки файлов, а на этапе **онлайн-авторизации**:
-  оригинальный Axon обращается к Razer Central Service / серверу Razer, который под Wine
-  не отвечает → зелёный экран с ошибкой сервера.
-- Наш прошлый фикс (OpenAxon) = **подмена `RazerAxon.UserManager.dll` на патч-версию**,
-  которая локально заглушает авторизацию (не ходит на сервер). После обновления Axon
-  (7 апреля) установленная DLL вернулась к оригиналу — патч был перетёрт.
-- **Патч переприменён → Axon запускается, открывается рабочий главный UI (ГОРЯЧЕЕ/ОБЗОР/
-  СЕРИЯ/АВТОРЫ), зелёного экрана ошибки больше нет.** Состояние на 2026-05-31: подтверждено
-  живьём (окно + скриншот экрана авторизации).
-- Уверенность ~90% (на 2026-05-31): проверено запуском под Wine (версия на дату лога) +
-  скриншотом рабочего UI. Граница: каталог обоев пуст (серые плейсхолдеры), т.к. токен
-  истёк — это отдельный шаг (перелогин), не относится к ошибке сервера.
+- Razer Axon **had already been installed** earlier in `~/.wine` (`RazerAxon.exe`, `RazerCentralService.exe`,
+  shortcuts). The problem is not at the file installation stage but at the **online authorisation** stage:
+  the original Axon talks to Razer Central Service / the Razer server, which does not respond under Wine
+  → green screen with a server error.
+- Our earlier fix (OpenAxon) = **replacing `RazerAxon.UserManager.dll` with a patched version**
+  that stubs out authorisation locally (does not contact the server). After the Axon update
+  (7 April) the installed DLL reverted to the original — the patch had been overwritten.
+- **Patch re-applied → Axon starts, the working main UI opens (HOT/BROWSE/
+  SERIES/ARTISTS), the green error screen is gone.** State as of 2026-05-31: confirmed
+  live (window + screenshot of the authorisation screen).
+- Confidence ~90% (as of 2026-05-31): verified by launching under Wine (the version current at the log date) +
+  a screenshot of the working UI. Limitation: the wallpaper catalogue is empty (grey placeholders) because the token
+  has expired — that is a separate step (logging in again) and is unrelated to the server error.
 
-## (а) В чём состоял наш прошлый фикс (Wine + DLL)
+## (a) What our earlier fix consisted of (Wine + DLL)
 
-OpenAxon (репо `wehrwolfmann/openaxon`, локально `<HOME>/Projects/openaxon/`) предлагает ДВА
-метода обхода онлайн-авторизации Razer:
+OpenAxon (repo `wehrwolfmann/openaxon`, locally `<HOME>/Projects/openaxon/`) offers TWO
+ways to bypass Razer's online authorisation:
 
-1. **Токен-инжектор (предпочтительный, без патча бинарника)** — `razer-login.py`
-   (WebKit-окно входа Razer ID → перехват JWT) + `razer-token-inject.py` (через named pipe
-   `{FC828A97-...}` шлёт `WebApp_SetLoginSuccessFromWeb` в RazerCentralService). Файлы Razer
-   остаются оригинальными.
+1. **Token injector (preferred, no binary patching)** — `razer-login.py`
+   (WebKit Razer ID login window → captures the JWT) + `razer-token-inject.py` (sends
+   `WebApp_SetLoginSuccessFromWeb` to RazerCentralService over the named pipe `{FC828A97-...}`). Razer's files
+   stay original.
 
-2. **DLL-патч (устаревший, но прямой) — то, что применено сейчас.**
-   Патчится `RazerAxon.UserManager.dll` (класс `UserManager : IUserManager`). Исходник:
+2. **DLL patch (outdated, but direct) — this is what is applied now.**
+   The patched file is `RazerAxon.UserManager.dll` (class `UserManager : IUserManager`). Source:
    `<HOME>/Projects/openaxon/patch/src/RazerSequoia.SequoiaUserManager/UserManager.cs`.
-   Суть переписанной логики:
-   - `LoginAsync()` — читает локальный токен из
-     `…/AppData/Local/Razer/RazerAxon/wine_login_token.json`; если токена нет/пуст —
-     создаёт локального гостя (`"noAuth"`, `isGuest`). **Никакого обращения к серверу.**
-   - `GetUserToken()` отдаёт токен из локального объекта `User`.
-   - `GetNatashaStateDescription()` → `"Service not found"` (заглушка проверки сервиса).
-   - Профиль/баланс/язык/тема — локальные заглушки; feedback/profile-окна открываются через
-     встроенный WebView2.
-   Эффект: оригинальная цепочка `UserManager → NacClient → named pipe → RazerCentralService →
-   сервер Razer` заменена локальной заглушкой → экран «доступ к серверу невозможен» не возникает.
+   The gist of the rewritten logic:
+   - `LoginAsync()` reads a local token from
+     `…/AppData/Local/Razer/RazerAxon/wine_login_token.json`; if there is no token or it is empty,
+     it creates a local guest (`"noAuth"`, `isGuest`). **No server requests at all.**
+   - `GetUserToken()` returns the token from the local `User` object.
+   - `GetNatashaStateDescription()` → `"Service not found"` (stub for the service check).
+   - Profile/balance/language/theme are local stubs; the feedback/profile windows open in
+     the embedded WebView2.
+   Effect: the original chain `UserManager → NacClient → named pipe → RazerCentralService →
+   Razer server` is replaced by a local stub → the "server access unavailable" screen never appears.
 
-   Применяется через `razer-axon.sh` (функция `check_patch`): при запуске сравнивает
-   установленную DLL с `patch/RazerAxon.UserManager.dll`, при отличии сохраняет `.orig` и
-   копирует патч. Минус метода (по README): **сбрасывается после каждого обновления Axon** —
-   ровно это и произошло 7 апреля.
+   It is applied by `razer-axon.sh` (function `check_patch`): on launch it compares
+   the installed DLL with `patch/RazerAxon.UserManager.dll`; if they differ, it saves `.orig` and
+   copies the patch over. The drawback of the method (per the README): **it is reset after every Axon update** —
+   which is exactly what happened on 7 April.
 
-   Wine-обвязка из `razer-axon.sh`: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--no-sandbox
+   Wine wrapping in `razer-axon.sh`: `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--no-sandbox
    --disable-gpu --disable-gpu-sandbox --in-process-gpu --disable-features=RendererCodeIntegrity"`,
-   снятие `WM_TRANSIENT_FOR` через xprop (фикс панели задач), `wine RazerAxon.exe -showui`.
+   removing `WM_TRANSIENT_FOR` via xprop (taskbar fix), `wine RazerAxon.exe -showui`.
 
-## (б) Research: WineHQ / обходы Razer-инсталляторов
+## (b) Research: WineHQ / workarounds for Razer installers
 
-- Официально: Razer Axon — Windows-only (Win10/11), но **жив и активно развивается**
-  (награды Best Wallpaper 2025, активный insider/сайт). Значит «ошибка сервера» под Wine =
-  сетевая/IPC-блокировка, а не закрытие продукта.
-- «Server Access Unavailable» — давняя общая проблема инсталляторов Razer (Synapse 3/4 и Axon
-  используют общий `RazerInstaller.exe`, он есть и у нас в
-  `ProgramData/Razer/Installer/App/RazerInstaller.exe`). Community-обходы (Razer Insider):
-  приоритет IPv4 / отключение IPv6, ручная установка модулей минуя визард инсталлятора,
-  запуск от админа + временное отключение firewall/AV. Для нас неактуально — файлы уже
-  установлены; нужен только обход авторизации, что делает наш DLL-патч.
-- WineHQ AppDB по конкретно Razer Axon — содержательных записей не найдено (нишевое ПО).
+- Officially Razer Axon is Windows-only (Win10/11), but it is **alive and actively developed**
+  (Best Wallpaper 2025 awards, active Insider forum/site). So the "server error" under Wine is
+  a network/IPC block, not the product being discontinued.
+- "Server Access Unavailable" is a long-standing common problem of Razer installers (Synapse 3/4 and Axon
+  use the shared `RazerInstaller.exe`, which we also have in
+  `ProgramData/Razer/Installer/App/RazerInstaller.exe`). Community workarounds (Razer Insider):
+  prefer IPv4 / disable IPv6, install modules manually bypassing the installer wizard,
+  run as administrator + temporarily disable the firewall/AV. Not relevant for us — the files are already
+  installed; all that is needed is an authorisation bypass, which our DLL patch provides.
+- WineHQ AppDB: no meaningful entries were found for Razer Axon specifically (niche software).
 
-Источники:
+Sources:
 - https://www.razer.com/software/axon
 - https://www.razer.com/newsroom/featured/razer-axon-best-wallpaper-2025
 - https://insider.razer.com/razer-synapse-4-55/error-server-access-unavailable-can-t-install-any-razer-app-87604
 - https://insider.razer.com/razer-synapse-3-29/synapse-3-0-install-server-access-unavailable-solution-5807
 
-## (в) Диагностика текущего падения
+## (c) Diagnosis of the current failure
 
-Окружение: Wine 11.10 (на дату лога, system), префикс `~/.wine`, winetricks доступен. Proton не использовался.
+Environment: Wine 11.10 (as of the log date, system), prefix `~/.wine`, winetricks available. Proton was not used.
 
-Состояние префикса до фикса:
-- Установлены: `…/Razer/Razer Axon/RazerAxon.exe` (PE32+ x86-64, .NET 6, self-contained,
-  `runtimeconfig.json`: net6.0 / NETCore.App 6.0.36), `RazerCentralService.exe`, WebView2 runtime.
-- `RazerAxon.UserManager.dll` (72904 байт) **== `RazerAxon.UserManager.dll.orig`** → т.е. стоял
-  ОРИГИНАЛ, патч был сброшен (вероятно апдейтом Axon 2026-04-07).
-- `wine_login_token.json` существует, но токен **истёк** (значение `tokenExpiry` в прошлом).
+State of the prefix before the fix:
+- Installed: `…/Razer/Razer Axon/RazerAxon.exe` (PE32+ x86-64, .NET 6, self-contained,
+  `runtimeconfig.json`: net6.0 / NETCore.App 6.0.36), `RazerCentralService.exe`, the WebView2 runtime.
+- `RazerAxon.UserManager.dll` (72904 bytes) **== `RazerAxon.UserManager.dll.orig`** → i.e. the
+  ORIGINAL was in place; the patch had been reset (probably by the Axon update of 2026-04-07).
+- `wine_login_token.json` exists, but the token has **expired** (the `tokenExpiry` value is in the past).
 
-Причина зелёного экрана: оригинальный `UserManager` идёт в RazerCentralService/сервер Razer
-за авторизацией; под Wine ответа нет → экран ошибки сервера. (Это не Wine-краш и не битый
-инсталлятор — это серверная проверка приложения.)
+Cause of the green screen: the original `UserManager` goes to RazerCentralService/the Razer server
+for authorisation; under Wine there is no response → the server error screen. (This is neither a Wine crash nor a broken
+installer — it is the application's server check.)
 
-## (г) Что применено и результат
+## (d) What was applied and the result
 
-Применён DLL-патч:
+The DLL patch was applied:
 ```bash
 AXON_DIR="$HOME/.wine/drive_c/Program Files (x86)/Razer/Razer Axon"
-# .orig уже валиден (== текущей оригинальной DLL); сделан доп. timestamped бэкап
+# .orig is already valid (== the current original DLL); an extra timestamped backup was made
 cp "$HOME/Projects/openaxon/patch/RazerAxon.UserManager.dll" \
    "$AXON_DIR/RazerAxon.UserManager.dll"
 ```
-Установленная DLL теперь идентична `patch/RazerAxon.UserManager.dll` (43008 байт).
+The installed DLL is now identical to `patch/RazerAxon.UserManager.dll` (43008 bytes).
 
-Запуск (Wine — версия на дату лога):
+Launch (Wine — the version current at the log date):
 ```bash
 WINEPREFIX=~/.wine WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--no-sandbox --disable-gpu \
   --disable-gpu-sandbox --in-process-gpu --disable-features=RendererCodeIntegrity" \
   wine RazerAxon.exe -showui
 ```
-Результат:
-- Окно «Razer Axon» появляется за ~8с и стабильно живёт.
-- **Нет** `BadImageFormatException` / `could not load … UserManager` / `Unhandled exception`
-  (несмотря на то, что `file` метит патч-DLL как i386 — managed-сборка грузится в x64-процесс
-  без проблем).
-- В логе **нет** маркеров `server/unavailable/access/central`.
-- Скриншот (`/tmp/axon_shot.png`): рабочий главный UI — навигация AXON/СОЗДАТЬ/СООБЩЕСТВО/
-  БИБЛИОТЕКА, вкладки ГОРЯЧЕЕ/ОБЗОР/СЕРИЯ/АВТОРЫ, аватар. Зелёного экрана ошибки сервера НЕТ.
-- Незначимые ошибки в логе (не блокируют): `Windows.UI.Composition.Compositor` (WinRT-эффекты)
-  и `combase`/COM-классы (нативные хелперы/телеметрия) — норма под Wine.
+Result:
+- The "Razer Axon" window appears in ~8 s and stays up reliably.
+- **No** `BadImageFormatException` / `could not load … UserManager` / `Unhandled exception`
+  (even though `file` labels the patched DLL as i386, the managed assembly loads into the x64 process
+  without problems).
+- The log has **no** `server/unavailable/access/central` markers.
+- Screenshot (`/tmp/axon_shot.png`): the working main UI — navigation AXON/CREATE/COMMUNITY/
+  LIBRARY, tabs HOT/BROWSE/SERIES/ARTISTS, avatar. NO green server error screen.
+- Insignificant errors in the log (not blocking): `Windows.UI.Composition.Compositor` (WinRT effects)
+  and `combase`/COM classes (native helpers/telemetry) — normal under Wine.
 
-Каталог обоев показывает серые плейсхолдеры (контент не подгрузился) — ожидаемо, т.к.
-истёк токен. Это НЕ ошибка сервера авторизации; решается перелогином (см. ниже).
+The wallpaper catalogue shows grey placeholders (content did not load) — expected, because
+the token has expired. This is NOT an authorisation server error; it is solved by logging in again (see below).
 
-## (д) Что подавать как «патч для Wine»
+> Note on UI labels: the screens were observed in Axon's Russian UI; the labels above are given in English
+> translation and may differ slightly from the exact wording of Axon's English UI.
 
-Важно: наш фикс — это **патч приложения Razer (подмена managed-DLL)**, а НЕ исправление в
-самом Wine. Wine здесь ведёт себя корректно; падал онлайн-механизм Razer. Поэтому в wine-devel
-подавать как патч исходников Wine **нечего** — это не баг Wine.
+## (e) What to submit as a "patch for Wine"
 
-Что реально можно оформить:
-- **WineHQ AppDB запись для Razer Axon**: версия Wine (на дату лога), рейтинг (Garbage→Bronze без
-  патча из-за серверного экрана; с обходом авторизации — выше), test report с шагами:
-  установка через `RazerInstaller.exe`, WEBVIEW2-флаги, обход авторизации (наш DLL-патч или
-  токен-инжектор), фикс `WM_TRANSIENT_FOR` для панели задач.
-- Если когда-либо найдётся настоящий Wine-баг (напр. winhttp/secur32/named-pipe IPC, из-за
-  которого RazerCentralService не может ответить), тогда — минимальный repro + diff в
-  соответствующий dll-модуль Wine. Сейчас такого repro нет: обход на уровне приложения
-  достаточен, корневой Wine-дефект не локализован.
+Important: our fix is a **patch of the Razer application (replacing a managed DLL)**, NOT a fix in
+Wine itself. Wine behaves correctly here; it was Razer's online mechanism that failed. So there is **nothing**
+to submit to wine-devel as a Wine source patch — this is not a Wine bug.
 
-## (е) Следующие шаги (для полноценной работы, не для устранения ошибки сервера)
+What can actually be written up:
+- **A WineHQ AppDB entry for Razer Axon**: Wine version (as of the log date), rating (Garbage→Bronze without
+  the patch because of the server screen; higher with the authorisation bypass), a test report with the steps:
+  installation via `RazerInstaller.exe`, the WEBVIEW2 flags, the authorisation bypass (our DLL patch or
+  the token injector), the `WM_TRANSIENT_FOR` fix for the taskbar.
+- If a real Wine bug is ever found (e.g. winhttp/secur32/named-pipe IPC, because of
+  which RazerCentralService cannot respond), then a minimal repro + a diff against
+  the relevant Wine dll module. There is no such repro now: the application-level bypass
+  is sufficient, and no root Wine defect has been pinpointed.
 
-1. Перелогин — токен истёк:
+## (f) Next steps (for full functionality, not for eliminating the server error)
+
+1. Log in again — the token has expired:
    ```bash
-   <HOME>/Projects/openaxon/razer-login.py     # получить свежий JWT
-   # с патч-DLL токен читается напрямую из wine_login_token.json при LoginAsync;
-   # token-inject нужен только для оригинальной (непатченой) цепочки через сервис
+   <HOME>/Projects/openaxon/razer-login.py     # get a fresh JWT
+   # with the patched DLL, the token is read directly from wine_login_token.json in LoginAsync;
+   # token-inject is only needed for the original (unpatched) chain through the service
    ```
-2. Запускать через `razer-axon.sh` — он сам переприменяет патч при апдейтах Axon
-   (`check_patch`) и чинит панель задач.
-3. После каждого обновления Razer Axon патч сбрасывается → переприменить
-   (`razer-axon.sh` делает это автоматически). Долгосрочная альтернатива без патча
-   бинарника — метод токен-инжектора.
+2. Launch via `razer-axon.sh` — it re-applies the patch itself after Axon updates
+   (`check_patch`) and fixes the taskbar.
+3. After every Razer Axon update the patch is reset → re-apply it
+   (`razer-axon.sh` does this automatically). The long-term alternative without patching
+   the binary is the token injector method.
 
-## Файлы
+## Files
 
-- Патч-DLL (применяемый): `<HOME>/Projects/openaxon/patch/RazerAxon.UserManager.dll`
-- Исходник патча: `<HOME>/Projects/openaxon/patch/src/RazerSequoia.SequoiaUserManager/UserManager.cs`
-- Лаунчер с авто-патчем: `<HOME>/Projects/openaxon/razer-axon.sh`
-- Бэкап оригинала: `…/Razer/Razer Axon/RazerAxon.UserManager.dll.orig` + timestamped `.bak.*`
-- Логи запуска: `/tmp/axon_run.log`, `/tmp/axon_run2.log`; скриншот `/tmp/axon_shot.png`
+- Patched DLL (the one applied): `<HOME>/Projects/openaxon/patch/RazerAxon.UserManager.dll`
+- Patch source: `<HOME>/Projects/openaxon/patch/src/RazerSequoia.SequoiaUserManager/UserManager.cs`
+- Launcher with auto-patching: `<HOME>/Projects/openaxon/razer-axon.sh`
+- Backup of the original: `…/Razer/Razer Axon/RazerAxon.UserManager.dll.orig` + timestamped `.bak.*`
+- Launch logs: `/tmp/axon_run.log`, `/tmp/axon_run2.log`; screenshot `/tmp/axon_shot.png`

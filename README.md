@@ -123,8 +123,8 @@ An interrupted run can be restarted — completed steps are skipped.
 On first launch a Razer Central window opens. **No Razer account is needed** —
 just click "Continue as guest", and the full wallpaper catalog opens.
 
-A breakdown of every step and the measurements behind it (in Russian) is in
-[`docs/установка_под_wine_2_9_1_0.md`](docs/установка_под_wine_2_9_1_0.md).
+A breakdown of every step and the measurements behind it is in
+[`docs/install-under-wine-2.9.1.0.md`](docs/install-under-wine-2.9.1.0.md).
 
 ### Manually, if you want to control every step
 
